@@ -1,0 +1,41 @@
+name: Build, test and publish to Azure (production)
+
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    build-test-and-publish:
+        name: 'Build, test and publish to Azure'
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v2
+            - name: Set up Java version
+              uses: actions/setup-java@v1
+                  with:
+                      java-version: 11
+                      java-package: jdk
+                      architecture: x64
+            - name: Package distribution deployment artefact
+              run: ./mvnw clean package
+            - name: Create distribution folder
+              run: mkdir distribution
+            - name: Copy distribution deployment artefact to the distribution folder
+              run: cp target/diplomatiq-backend.jar distribution
+            - name: Copy web.config to distribution folder
+              run: cp web.config distribution
+            - name: Store distribution deployment artefact
+              uses: actions/upload-artifact@v1
+              with:
+                  name: diplomatiq-backend-dist-${{ github.sha }}
+                  path: distribution
+            - name: Publish distribution deployment artefact to Azure
+              uses: azure/webapps-deploy@v1
+              with:
+                  app-name: 'app-diplomatiqfrontend-prod-001'
+                  slot-name: 'develop'
+                  publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE_DEVELOP }}
+                  package: 'distribution'
