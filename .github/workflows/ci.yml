@@ -61,10 +61,5 @@ jobs:
                   java-version: 11
                   java-package: jdk
                   architecture: x64
-            - name: Build and test
-              run: ./mvnw clean package
-            - name: Scan the code with SonarCloud
-              uses: sonarsource/sonarcloud-github-action@34eca22d1c5760f6ec08cb4b5c2f026796eb8e30
-              env:
-                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Build, test and scan with SonarCloud
+              run: ./mvnw clean verify -P sonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
