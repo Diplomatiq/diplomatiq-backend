@@ -1,4 +1,4 @@
-name: Build, test and publish to Azure (production)
+name: Build, test and publish to Azure (develop)
 
 on:
     push:
