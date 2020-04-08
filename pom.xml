@@ -108,37 +108,25 @@
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>3.7.0.1746</version>
-                <executions>
-                    <execution>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sonar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.5</version>
-                <configuration>
-                    <append>true</append>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>prepare-agent-integration</id>
+                        <phase>pre-integration-test</phase>
                         <goals>
                             <goal>prepare-agent-integration</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>jacoco-site</id>
+                        <id>report</id>
                         <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
@@ -155,19 +143,16 @@
             <properties>
                 <sonar.host.url>https://sonarcloud.io</sonar.host.url>
                 <sonar.organization>diplomatiq</sonar.organization>
+                <sonar.projectKey>Diplomatiq_diplomatiq-backend</sonar.projectKey>
+                <sonar.projectName>diplomatiq-backend</sonar.projectName>
+                <sonar.sources>src/main</sonar.sources>
+                <sonar.tests>src/test</sonar.tests>
+                <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
+                <sonar.links.homepage>https://github.com/Diplomatiq/diplomatiq-frontend</sonar.links.homepage>
+                <sonar.links.ci>https://github.com/Diplomatiq/diplomatiq-frontend/actions</sonar.links.ci>
+                <sonar.links.scm>https://github.com/Diplomatiq/diplomatiq-frontend</sonar.links.scm>
+                <sonar.links.issue>https://github.com/Diplomatiq/diplomatiq-frontend/issues</sonar.links.issue>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.sonarsource.scanner.maven</groupId>
-                        <artifactId>sonar-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 
