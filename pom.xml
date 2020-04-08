@@ -13,6 +13,21 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>Diplomatiq Backend</name>
     <description>The backend infrastructure of the Diplomatiq network.</description>
+    <developers>
+        <developer>
+            <id>luczsoma</id>
+            <email>soma.lucz@diplomatiq.org</email>
+            <name>Soma Lucz</name>
+            <organization>Diplomatiq</organization>
+            <organizationUrl>https://www.diplomatiq.org</organizationUrl>
+            <url>https://soma.lucz.co</url>
+            <roles>
+                <role>CEO</role>
+                <role>Architect</role>
+            </roles>
+            <timezone>Europe/Budapest</timezone>
+        </developer>
+    </developers>
 
     <properties>
         <java.version>11</java.version>
@@ -115,11 +130,13 @@
                 <version>0.8.5</version>
                 <executions>
                     <execution>
+                        <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
                     <execution>
+                        <id>prepare-agent-integration</id>
                         <phase>pre-integration-test</phase>
                         <goals>
                             <goal>prepare-agent-integration</goal>
