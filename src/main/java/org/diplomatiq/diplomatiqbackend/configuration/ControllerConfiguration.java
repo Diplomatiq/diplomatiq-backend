@@ -1,4 +1,4 @@
-package org.diplomatiq.diplomatiqbackend;
+package org.diplomatiq.diplomatiqbackend.configuration;
 
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;

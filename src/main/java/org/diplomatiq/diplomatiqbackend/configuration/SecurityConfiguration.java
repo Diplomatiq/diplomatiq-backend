@@ -1,4 +1,4 @@
-package org.diplomatiq.diplomatiqbackend;
+package org.diplomatiq.diplomatiqbackend.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.SessionAuthenticationFilter;
