@@ -32,9 +32,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         configureSecurityHeaders(http);
         configureCors(http);
-        configureCsrf(http);
         configureSessionManagement(http);
         configureAuthFilters(http);
+        disableUnusedAutoConfiguredFeatures(http);
     }
 
     private void configureSecurityHeaders(HttpSecurity httpSecurity) throws Exception {
@@ -100,14 +100,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http.cors().configurationSource(corsConfigurationSource);
     }
 
-    private void configureCsrf(HttpSecurity http) throws Exception {
-        http.csrf().disable();
-    }
-
-    private void configureSessionManagement(HttpSecurity http) throws Exception {
-        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-    }
-
     private void configureAuthFilters(HttpSecurity http) throws Exception {
         RequestMatcher filterRequestMatcher =
             httpServletRequest -> !ControllerPathLister.getPaths(UnauthenticatedMethods.class)
@@ -115,6 +107,19 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http.addFilterAfter(new RequestSignatureVerificationFilter(filterRequestMatcher), LogoutFilter.class);
         http.addFilterAfter(new SessionAuthenticationFilter(filterRequestMatcher, authenticationService, objectMapper),
             RequestSignatureVerificationFilter.class);
+    }
+
+    private void configureSessionManagement(HttpSecurity http) throws Exception {
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+    }
+
+    private void disableUnusedAutoConfiguredFeatures(HttpSecurity http) throws Exception {
+        http.anonymous().disable();
+        http.exceptionHandling().disable();
+        http.formLogin().disable();
+        http.httpBasic().disable();
+        http.logout().disable();
+        http.csrf().disable();
     }
 
 }
