@@ -2,13 +2,13 @@ package org.diplomatiq.diplomatiqbackend.filters.authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.exceptions.api.UnauthorizedException;
+import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingGenericFilterBean;
 import org.diplomatiq.diplomatiqbackend.methods.entities.UserIdentity;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.filter.GenericFilterBean;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -18,45 +18,35 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class SessionAuthenticationFilter extends GenericFilterBean {
+public class SessionAuthenticationFilter extends RequestMatchingGenericFilterBean {
     private static final String ENCRYPTED_SESSION_ID_KEY = "EncryptedSessionId";
     private static final String DEVICE_ID_KEY = "DeviceId";
 
-    private RequestMatcher requiresAuthenticationRequestMatcher;
     private AuthenticationService authenticationService;
     private ObjectMapper objectMapper;
 
     public SessionAuthenticationFilter(RequestMatcher requestMatcher, AuthenticationService authenticationService,
                                        ObjectMapper objectMapper) {
-        requiresAuthenticationRequestMatcher = requestMatcher;
+        super(requestMatcher);
         this.authenticationService = authenticationService;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain) throws IOException, ServletException {
+    public void doFilterIfRequestMatches(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest)servletRequest;
         HttpServletResponse response = (HttpServletResponse)servletResponse;
-
-        if (!requiresAuthentication(request)) {
-            chain.doFilter(request, response);
-            return;
-        }
 
         try {
             SessionAuthenticationToken authenticationResult = attemptAuthentication(request);
             SecurityContextHolder.getContext().setAuthentication(authenticationResult);
-            chain.doFilter(request, response);
+            chain.doFilter(servletRequest, servletResponse);
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setCharacterEncoding("UTF-8");
             objectMapper.writeValue(response.getWriter(), new UnauthorizedException());
         }
-    }
-
-    private boolean requiresAuthentication(HttpServletRequest request) {
-        return requiresAuthenticationRequestMatcher.matches(request);
     }
 
     public SessionAuthenticationToken attemptAuthentication(HttpServletRequest httpServletRequest) throws AuthenticationException {

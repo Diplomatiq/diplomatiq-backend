@@ -145,6 +145,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
                                                              HttpStatus status, WebRequest request) {
+        headers.addIfAbsent("Content-Type", "application/json");
         return new ResponseEntity<>(body, headers, status);
     }
 
