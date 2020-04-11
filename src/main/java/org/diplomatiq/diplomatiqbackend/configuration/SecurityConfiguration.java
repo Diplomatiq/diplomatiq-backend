@@ -174,7 +174,7 @@ public class SecurityConfiguration {
                 httpServletRequest ->
                     !ControllerPathLister.getPaths(UnauthenticatedMethods.class)
                         .contains(httpServletRequest.getServletPath());
-            http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher), LogoutFilter.class);
+            http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher, authenticationService, objectMapper), LogoutFilter.class);
             http.addFilterAfter(new SessionAuthenticationFilter(authFiltersRequestMatcher, authenticationService,
                     objectMapper),
                 RequestSignatureVerificationFilter.class);

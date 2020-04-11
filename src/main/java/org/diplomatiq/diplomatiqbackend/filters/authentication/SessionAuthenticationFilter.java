@@ -54,7 +54,7 @@ public class SessionAuthenticationFilter extends RequestMatchingGenericFilterBea
         String deviceId = httpServletRequest.getHeader(DEVICE_ID_KEY);
         String sessionId = authenticationService.validateAndDecryptEncryptedSessionId(encryptedSessionId,
             deviceId);
-        UserIdentity userIdentity = authenticationService.lookupUserBySessionId(sessionId);
+        UserIdentity userIdentity = authenticationService.getUserBySessionId(sessionId);
         return new SessionAuthenticationToken(userIdentity, sessionId);
     }
 }
