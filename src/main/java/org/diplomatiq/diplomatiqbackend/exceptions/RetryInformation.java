@@ -1,7 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.exceptions;
 
 public class RetryInformation {
-    enum BackoffStrategy {
+    private enum BackoffStrategy {
         constant,
         linear,
         exponential,
