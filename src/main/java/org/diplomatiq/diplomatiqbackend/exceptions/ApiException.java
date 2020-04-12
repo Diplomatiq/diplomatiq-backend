@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.HttpStatus;
 
-import javax.annotation.Nullable;
-
 @JsonAutoDetect(
     fieldVisibility = JsonAutoDetect.Visibility.NONE,
     setterVisibility = JsonAutoDetect.Visibility.NONE,
@@ -24,8 +22,8 @@ public abstract class ApiException extends Exception {
     @JsonProperty
     private final RetryInformation retryInformation;
 
-    public ApiException(String errorCode, ApiExceptionOrigin exceptionOrigin, @Nullable HttpStatus httpStatusCode,
-                        @Nullable RetryInformation retryInformation) {
+    public ApiException(String errorCode, ApiExceptionOrigin exceptionOrigin, HttpStatus httpStatusCode,
+                        RetryInformation retryInformation) {
         this.errorCode = errorCode;
         this.exceptionOrigin = exceptionOrigin;
         this.httpStatusCode = httpStatusCode;

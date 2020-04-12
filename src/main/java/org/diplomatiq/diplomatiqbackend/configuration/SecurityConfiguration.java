@@ -3,8 +3,6 @@ package org.diplomatiq.diplomatiqbackend.configuration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.SessionAuthenticationFilter;
 import org.diplomatiq.diplomatiqbackend.filters.signature.RequestSignatureVerificationFilter;
-import org.diplomatiq.diplomatiqbackend.methods.controllers.UnauthenticatedMethods;
-import org.diplomatiq.diplomatiqbackend.methods.utils.ControllerPathLister;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +18,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
 
 @EnableWebSecurity
 public class SecurityConfiguration {
@@ -100,6 +100,13 @@ public class SecurityConfiguration {
     @Configuration
     public static class DefaultSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
+        private final Set<String> UNAUTHENTICATED_PATHS = Collections.unmodifiableSet(
+            Set.of(
+                "/",
+                "/challenge-v1"
+            )
+        );
+
         @Autowired
         private AuthenticationService authenticationService;
 
@@ -171,10 +178,9 @@ public class SecurityConfiguration {
             http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
             RequestMatcher authFiltersRequestMatcher =
-                httpServletRequest ->
-                    !ControllerPathLister.getPaths(UnauthenticatedMethods.class)
-                        .contains(httpServletRequest.getServletPath());
-            http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher, authenticationService, objectMapper), LogoutFilter.class);
+                httpServletRequest -> !UNAUTHENTICATED_PATHS.contains(httpServletRequest.getServletPath());
+            http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher,
+                authenticationService, objectMapper), LogoutFilter.class);
             http.addFilterAfter(new SessionAuthenticationFilter(authFiltersRequestMatcher, authenticationService,
                     objectMapper),
                 RequestSignatureVerificationFilter.class);
