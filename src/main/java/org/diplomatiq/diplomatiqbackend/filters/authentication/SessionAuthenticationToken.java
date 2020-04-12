@@ -1,6 +1,6 @@
 package org.diplomatiq.diplomatiqbackend.filters.authentication;
 
-import org.diplomatiq.diplomatiqbackend.methods.entities.UserIdentity;
+import org.diplomatiq.diplomatiqbackend.entities.UserIdentity;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 
 public class SessionAuthenticationToken extends AbstractAuthenticationToken {

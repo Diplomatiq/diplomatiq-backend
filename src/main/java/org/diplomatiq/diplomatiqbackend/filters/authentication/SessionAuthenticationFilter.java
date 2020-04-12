@@ -3,7 +3,7 @@ package org.diplomatiq.diplomatiqbackend.filters.authentication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.exceptions.api.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingGenericFilterBean;
-import org.diplomatiq.diplomatiqbackend.methods.entities.UserIdentity;
+import org.diplomatiq.diplomatiqbackend.entities.UserIdentity;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;

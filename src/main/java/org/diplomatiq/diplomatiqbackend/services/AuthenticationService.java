@@ -1,6 +1,6 @@
 package org.diplomatiq.diplomatiqbackend.services;
 
-import org.diplomatiq.diplomatiqbackend.methods.entities.UserIdentity;
+import org.diplomatiq.diplomatiqbackend.entities.UserIdentity;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -37,7 +37,7 @@ public class AuthenticationService {
             throw new IllegalArgumentException("sessionId must not be empty");
         }
 
-        return new UserIdentity("asd", "soma.lucz@diplomatiq.org");
+        return new UserIdentity("soma.lucz@diplomatiq.org");
     }
 
     public byte[] getDeviceKeyByDeviceId(String deviceId) {

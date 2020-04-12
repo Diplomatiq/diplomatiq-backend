@@ -17,6 +17,7 @@ import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
@@ -26,12 +27,19 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
+    @ExceptionHandler({ Exception.class })
+    protected ResponseEntity<Object> handleEverything(Exception ex, WebRequest request) {
+        InternalServerErrorException internalServerErrorException = new InternalServerErrorException();
+        return handleExceptionInternal(ex, internalServerErrorException, new HttpHeaders(),
+            internalServerErrorException.getHttpStatusCode(), request);
+    }
+
     @Override
     protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex,
                                                                          HttpHeaders headers, HttpStatus status,
                                                                          WebRequest request) {
         MethodNotAllowedException exception = new MethodNotAllowedException();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -39,7 +47,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                      HttpHeaders headers, HttpStatus status,
                                                                      WebRequest request) {
         UnsupportedMediaTypeException exception = new UnsupportedMediaTypeException();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -47,14 +55,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                       HttpHeaders headers, HttpStatus status,
                                                                       WebRequest request) {
         NotAcceptableException exception = new NotAcceptableException();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
     protected ResponseEntity<Object> handleMissingPathVariable(MissingPathVariableException ex, HttpHeaders headers,
                                                                HttpStatus status, WebRequest request) {
         BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -62,7 +70,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                           HttpHeaders headers, HttpStatus status,
                                                                           WebRequest request) {
         BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -70,7 +78,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                           HttpHeaders headers, HttpStatus status,
                                                                           WebRequest request) {
         BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -78,14 +86,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
         InternalServerErrorException exception = new InternalServerErrorException();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
     protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
                                                         HttpStatus status, WebRequest request) {
         BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -93,7 +101,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
         InternalServerErrorException exception = new InternalServerErrorException();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -101,7 +109,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
         InternalServerErrorException exception = new InternalServerErrorException();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -109,7 +117,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
         BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -117,21 +125,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                      HttpHeaders headers, HttpStatus status,
                                                                      WebRequest request) {
         BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
     protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status,
                                                          WebRequest request) {
         BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers,
                                                                    HttpStatus status, WebRequest request) {
         NotFoundException exception = new NotFoundException();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
@@ -139,7 +147,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                         HttpHeaders headers, HttpStatus status,
                                                                         WebRequest request) {
         InternalServerErrorException exception = new InternalServerErrorException();
-        return handleExceptionInternal(exception, exception, headers, exception.getHttpStatusCode(), request);
+        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
     }
 
     @Override
