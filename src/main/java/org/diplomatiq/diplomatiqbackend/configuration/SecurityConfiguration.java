@@ -103,7 +103,8 @@ public class SecurityConfiguration {
         private final Set<String> UNAUTHENTICATED_PATHS = Collections.unmodifiableSet(
             Set.of(
                 "/",
-                "/challenge-v1"
+                "/get-challenge-v1",
+                "/get-device-container-key-v1"
             )
         );
 
@@ -179,10 +180,10 @@ public class SecurityConfiguration {
 
             RequestMatcher authFiltersRequestMatcher =
                 httpServletRequest -> !UNAUTHENTICATED_PATHS.contains(httpServletRequest.getServletPath());
-            http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher,
-                authenticationService, objectMapper), LogoutFilter.class);
-            http.addFilterAfter(new SessionAuthenticationFilter(authFiltersRequestMatcher, authenticationService,
-                    objectMapper),
+            http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher, objectMapper,
+                authenticationService), LogoutFilter.class);
+            http.addFilterAfter(new SessionAuthenticationFilter(authFiltersRequestMatcher, objectMapper,
+                    authenticationService),
                 RequestSignatureVerificationFilter.class);
 
             http.anonymous().disable();

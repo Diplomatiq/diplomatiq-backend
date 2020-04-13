@@ -28,13 +28,21 @@ public class UnauthenticatedMethods {
     }
 
     @RequestMapping(
-        name = "challengeV1",
-        path = "challenge-v1",
+        name = "getChallengeV1",
+        path = "get-challenge-v1",
         method = RequestMethod.POST,
-        consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public void challengeV1() {
+    public void getChallengeV1() {
+    }
+
+    @RequestMapping(
+        name = "getDeviceContainerKey",
+        path = "get-device-container-key-v1",
+        method = RequestMethod.GET,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public void getDeviceContainerKeyV1() {
     }
 
 }

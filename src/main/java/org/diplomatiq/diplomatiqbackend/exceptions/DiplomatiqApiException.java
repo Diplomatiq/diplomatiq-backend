@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
     isGetterVisibility = JsonAutoDetect.Visibility.NONE,
     creatorVisibility = JsonAutoDetect.Visibility.NONE
 )
-public abstract class ApiException extends Exception {
+public abstract class DiplomatiqApiException extends RuntimeException {
     @JsonProperty
     private final String errorCode;
 
@@ -22,12 +22,18 @@ public abstract class ApiException extends Exception {
     @JsonProperty
     private final RetryInformation retryInformation;
 
-    public ApiException(String errorCode, ApiExceptionOrigin exceptionOrigin, HttpStatus httpStatusCode,
-                        RetryInformation retryInformation) {
+    private final String message;
+
+    private final Exception internalException;
+
+    public DiplomatiqApiException(String errorCode, ApiExceptionOrigin exceptionOrigin, HttpStatus httpStatusCode,
+                                  RetryInformation retryInformation, String message, Exception internalException) {
         this.errorCode = errorCode;
         this.exceptionOrigin = exceptionOrigin;
         this.httpStatusCode = httpStatusCode;
         this.retryInformation = retryInformation;
+        this.message = message;
+        this.internalException = internalException;
     }
 
     public String getErrorCode() {
@@ -56,5 +62,13 @@ public abstract class ApiException extends Exception {
         }
 
         return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public Exception getInternalException() {
+        return internalException;
     }
 }

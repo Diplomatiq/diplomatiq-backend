@@ -18,7 +18,7 @@ public final class AuthenticationScheme {
                 return DiplomatiqAuthenticationScheme.SignedSession;
 
             default:
-                throw new IllegalArgumentException("unknown authentication scheme");
+                throw new IllegalArgumentException("unknown authentication scheme: " + s);
         }
     }
 

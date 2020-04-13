@@ -18,7 +18,7 @@ public final class RequestSigningAlgorithm {
                 return DiplomatiqRequestSigningAlgorithm.DIPLOMAITQ_01_HMAC_SHA256;
 
             default:
-                throw new IllegalArgumentException("unknown signature algorithm");
+                throw new IllegalArgumentException("unknown signature algorithm: " + s);
         }
     }
 
