@@ -23,10 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
@@ -125,7 +122,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
             }
         }
 
-        SortedMap<String, String> signedHeaders = new TreeMap<>();
+        Map<String, String> signedHeaders = new LinkedHashMap<>();
         for (String signedHeaderName : signedHeaderNames) {
             String signedHeaderValue = request.getHeader(signedHeaderName);
             if (signedHeaderValue == null || signedHeaderValue.equals("")) {

@@ -1,4 +1,4 @@
-package org.diplomatiq.diplomatiqbackend;
+package org.diplomatiq.diplomatiqbackend.utils;
 
 public enum AuthenticationLevel {
     Unauthenticated,

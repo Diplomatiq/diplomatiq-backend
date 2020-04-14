@@ -1,20 +1,31 @@
 package org.diplomatiq.diplomatiqbackend.methods.controllers;
 
+import org.diplomatiq.diplomatiqbackend.methods.entities.PasswordAuthenticationInitV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.PasswordAuthenticationInitV1Response;
+import org.diplomatiq.diplomatiqbackend.methods.entities.RegisterUserV1Request;
+import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
+import org.diplomatiq.diplomatiqbackend.services.RegistrationService;
 import org.diplomatiq.diplomatiqbackend.services.UserIdentityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.NoSuchAlgorithmException;
 
 @RestController
 public class UnauthenticatedMethods {
 
     @Autowired
     private UserIdentityService userIdentityService;
+
+    @Autowired
+    private RegistrationService registrationService;
+
+    @Autowired
+    private AuthenticationService authenticationService;
 
     @RequestMapping(
         name = "rootRedirect",
@@ -28,12 +39,36 @@ public class UnauthenticatedMethods {
     }
 
     @RequestMapping(
-        name = "getChallengeV1",
-        path = "get-challenge-v1",
+        name = "registerUserV1",
+        path = "register-user-v1",
         method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public void getChallengeV1() {
+    public void registerUserV1(@RequestBody RegisterUserV1Request request) {
+        registrationService.registerUser(request);
+    }
+
+    @RequestMapping(
+        name = "passwordAuthenticationInitV1",
+        path = "password-authentication-init-v1",
+        method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(@RequestBody PasswordAuthenticationInitV1Request request) throws NoSuchAlgorithmException {
+        return authenticationService.passwordAuthenticationInitV1(request);
+    }
+
+    @RequestMapping(
+        name = "passwordAuthenticationCompleteV1",
+        path = "password-authentication-complete-v1",
+        method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public void passwordAuthenticationCompleteV1() {
+
     }
 
     @RequestMapping(

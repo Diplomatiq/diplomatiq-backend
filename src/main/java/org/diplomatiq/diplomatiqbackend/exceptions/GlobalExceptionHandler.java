@@ -27,6 +27,11 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
+    @ExceptionHandler({ DiplomatiqApiException.class })
+    protected ResponseEntity<Object> handleDiplomatiqApIException(DiplomatiqApiException ex, WebRequest request) {
+        return handleExceptionInternal(ex, ex, new HttpHeaders(), ex.getHttpStatusCode(), request);
+    }
+
     @ExceptionHandler({ Exception.class })
     protected ResponseEntity<Object> handleEverything(Exception ex, WebRequest request) {
         InternalServerErrorException internalServerErrorException = new InternalServerErrorException();

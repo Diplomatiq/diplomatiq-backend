@@ -27,7 +27,7 @@ public class Neo4jConfiguration {
 
     @Bean
     public SessionFactory sessionFactory() {
-        return new SessionFactory(configuration(), "org.diplomatiq.diplomatiqbackend.entities");
+        return new SessionFactory(configuration(), "org.diplomatiq.diplomatiqbackend.domain.entities");
     }
 
     @Bean
