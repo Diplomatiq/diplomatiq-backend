@@ -5,8 +5,6 @@ import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiException;
 import org.diplomatiq.diplomatiqbackend.exceptions.api.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.exceptions.http.MethodNotAllowedException;
 import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingFilter;
-import org.diplomatiq.diplomatiqbackend.filters.signature.AuthenticationScheme.DiplomatiqAuthenticationScheme;
-import org.diplomatiq.diplomatiqbackend.filters.signature.RequestSigningAlgorithm.DiplomatiqRequestSigningAlgorithm;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -23,7 +21,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
@@ -64,16 +65,23 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
 
         String[] authorizationHeaderSplit = authorizationHeader.split(" ");
 
+        String authenticationSchemeString = authorizationHeaderSplit[0];
+        String signatureBase64 = authorizationHeaderSplit[1];
+
         DiplomatiqAuthenticationScheme authenticationScheme;
         try {
-            authenticationScheme = AuthenticationScheme.fromString(authorizationHeaderSplit[0]);
+            authenticationScheme = DiplomatiqAuthenticationScheme.valueOf(authenticationSchemeString);
         } catch (IllegalArgumentException ex) {
             throw new UnauthorizedException("Unknown authentication scheme.", ex);
         }
 
         switch (authenticationScheme) {
-            case SignedSession:
-                verifySignedSessionSignature(request, authorizationHeaderSplit);
+            case SignedSessionV1:
+                verifySignedSessionV1Signature(request, authenticationScheme, signatureBase64);
+                break;
+
+            case SignedAuthenticationSessionV1:
+                verifySignedAuthenticationSessionV1Signature(request, authenticationScheme, signatureBase64);
                 break;
 
             default:
@@ -81,22 +89,13 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         }
     }
 
-    private void verifySignedSessionSignature(ContentCachingRequestWrapper request,
-                                              String[] authorizationHeaderSplit) throws NoSuchAlgorithmException,
+    private void verifySignedSessionV1Signature(ContentCachingRequestWrapper request,
+                                                DiplomatiqAuthenticationScheme authenticationScheme,
+                                                String signatureBase64) throws NoSuchAlgorithmException,
         InvalidKeyException {
-        DiplomatiqRequestSigningAlgorithm requestSigningAlgorithm;
-
-        try {
-            requestSigningAlgorithm = RequestSigningAlgorithm.fromString(authorizationHeaderSplit[1]);
-        } catch (IllegalArgumentException ex) {
-            throw new UnauthorizedException("Unknown signature algorithm.", ex);
-        }
-
-        Base64.Decoder base64Decoder = Base64.getDecoder();
         byte[] providedSignature;
-
         try {
-            providedSignature = base64Decoder.decode(authorizationHeaderSplit[2].getBytes(StandardCharsets.UTF_8));
+            providedSignature = Base64.getDecoder().decode(signatureBase64);
         } catch (Exception ex) {
             throw new UnauthorizedException("Could not decode base64 signature.", ex);
         }
@@ -115,7 +114,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         }
 
         Set<String> signedHeaderNames = Set.of(signedHeaderNamesString.split(";"));
-        for (String mandatoryHeaderName : DiplomatiqHeaders.RequiredSignedHeaders.get(httpRequestMethod)) {
+        for (String mandatoryHeaderName : DiplomatiqHeaders.RequiredSignedSessionV1Headers.get(httpRequestMethod)) {
             if (!signedHeaderNames.contains(mandatoryHeaderName.toLowerCase())) {
                 throw new UnauthorizedException(String.format("Mandatory header %s is missing from SignedHeaders.",
                     mandatoryHeaderName), null);
@@ -132,12 +131,9 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
             signedHeaders.put(signedHeaderName.toLowerCase(), signedHeaderValue);
         }
 
-        Base64.Encoder base64Encoder = Base64.getEncoder();
-        MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
-
         byte[] payload = request.getContentAsByteArray();
-        byte[] payloadHash = sha256.digest(payload);
-        String payloadHashBase64 = base64Encoder.encodeToString(payloadHash);
+        byte[] payloadHash = MessageDigest.getInstance("SHA-256").digest(payload);
+        String payloadHashBase64 = Base64.getEncoder().encodeToString(payloadHash);
 
         String canonicalHeaders = signedHeaders.entrySet().stream()
             .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
@@ -146,16 +142,17 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         String canonicalRequest = String.format("%s\n%s\n%s\n%s\n%s", httpRequestMethod, uri, queryString,
             canonicalHeaders, payloadHashBase64);
 
-        byte[] canonicalRequestHash = sha256.digest(canonicalRequest.getBytes(StandardCharsets.UTF_8));
-        String canonicalRequestHashBase64 = base64Encoder.encodeToString(canonicalRequestHash);
-        String stringToSign = String.format("%s %s", requestSigningAlgorithm.string, canonicalRequestHashBase64);
+        byte[] canonicalRequestHash =
+            MessageDigest.getInstance("SHA-256").digest(canonicalRequest.getBytes(StandardCharsets.UTF_8));
+        String canonicalRequestHashBase64 = Base64.getEncoder().encodeToString(canonicalRequestHash);
+        String stringToSign = String.format("%s %s", authenticationScheme.name(), canonicalRequestHashBase64);
 
         String deviceId = signedHeaders.get("DeviceId".toLowerCase());
-        byte[] deviceKeyRaw = authenticationService.getDeviceKeyByDeviceId(deviceId);
-        SecretKeySpec deviceKey = new SecretKeySpec(deviceKeyRaw, "HmacSHA256");
+        byte[] deviceKey = authenticationService.getDeviceKeyByDeviceId(deviceId);
+        SecretKeySpec deviceKeySpec = new SecretKeySpec(deviceKey, "HmacSHA256");
 
         Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(deviceKey);
+        mac.init(deviceKeySpec);
         byte[] expectedSignature = mac.doFinal(stringToSign.getBytes(StandardCharsets.UTF_8));
 
         if (!MessageDigest.isEqual(expectedSignature, providedSignature)) {
@@ -163,4 +160,76 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         }
     }
 
+    private void verifySignedAuthenticationSessionV1Signature(ContentCachingRequestWrapper request,
+                                                              DiplomatiqAuthenticationScheme authenticationScheme,
+                                                              String signatureBase64) throws NoSuchAlgorithmException,
+        InvalidKeyException {
+        byte[] providedSignature;
+        try {
+            providedSignature = Base64.getDecoder().decode(signatureBase64);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Could not decode base64 signature.", ex);
+        }
+
+        String httpRequestMethod = request.getMethod().toUpperCase();
+        if (!DiplomatiqMethods.AllowedRequestMethods.contains(httpRequestMethod)) {
+            throw new MethodNotAllowedException(String.format("Method %s is not allowed.", httpRequestMethod), null);
+        }
+
+        String uri = request.getRequestURI();
+        String queryString = request.getQueryString();
+
+        String signedHeaderNamesString = request.getHeader("SignedHeaders");
+        if (signedHeaderNamesString == null || signedHeaderNamesString.equals("")) {
+            throw new UnauthorizedException("SignedHeaders header must not be null or empty.", null);
+        }
+
+        Set<String> signedHeaderNames = Set.of(signedHeaderNamesString.split(";"));
+        for (String mandatoryHeaderName :
+            DiplomatiqHeaders.RequiredSignedAuthenticationSessionV1Headers.get(httpRequestMethod)) {
+            if (!signedHeaderNames.contains(mandatoryHeaderName.toLowerCase())) {
+                throw new UnauthorizedException(String.format("Mandatory header %s is missing from SignedHeaders.",
+                    mandatoryHeaderName), null);
+            }
+        }
+
+        Map<String, String> signedHeaders = new LinkedHashMap<>();
+        for (String signedHeaderName : signedHeaderNames) {
+            String signedHeaderValue = request.getHeader(signedHeaderName);
+            if (signedHeaderValue == null || signedHeaderValue.equals("")) {
+                throw new UnauthorizedException(String.format("Signed header %s not found among headers.",
+                    signedHeaderName), null);
+            }
+            signedHeaders.put(signedHeaderName.toLowerCase(), signedHeaderValue);
+        }
+
+        byte[] payload = request.getContentAsByteArray();
+        byte[] payloadHash = MessageDigest.getInstance("SHA-256").digest(payload);
+        String payloadHashBase64 = Base64.getEncoder().encodeToString(payloadHash);
+
+        String canonicalHeaders = signedHeaders.entrySet().stream()
+            .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
+            .collect(Collectors.joining("\n"));
+
+        String canonicalRequest = String.format("%s\n%s\n%s\n%s\n%s", httpRequestMethod, uri, queryString,
+            canonicalHeaders, payloadHashBase64);
+
+        byte[] canonicalRequestHash =
+            MessageDigest.getInstance("SHA-256").digest(canonicalRequest.getBytes(StandardCharsets.UTF_8));
+        String canonicalRequestHashBase64 = Base64.getEncoder().encodeToString(canonicalRequestHash);
+        String stringToSign = String.format("%s %s", authenticationScheme.name(), canonicalRequestHashBase64);
+
+        String authenticationSessionId = signedHeaders.get("AuthenticationSessionId".toLowerCase());
+        byte[] authenticationSessionKey =
+            authenticationService.getAuthenticationSessionKeyByAuthenticationSessionId(authenticationSessionId);
+        SecretKeySpec authenticationSessionKeySpec = new SecretKeySpec(authenticationSessionKey, "HmacSHA256");
+
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(authenticationSessionKeySpec);
+        byte[] expectedSignature = mac.doFinal(stringToSign.getBytes(StandardCharsets.UTF_8));
+
+        if (!MessageDigest.isEqual(expectedSignature, providedSignature)) {
+            throw new UnauthorizedException("Request signature mismatch.", null);
+        }
+    }
 }

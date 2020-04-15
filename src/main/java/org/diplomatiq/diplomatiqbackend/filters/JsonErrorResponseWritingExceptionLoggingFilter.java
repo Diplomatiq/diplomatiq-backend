@@ -12,7 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public abstract class JsonErrorResponseWritingExceptionLoggingFilter extends GenericFilterBean {
-
     private final Logger logger = LoggerFactory.getLogger(JsonErrorResponseWritingExceptionLoggingFilter.class);
 
     private ObjectMapper objectMapper;
@@ -36,5 +35,4 @@ public abstract class JsonErrorResponseWritingExceptionLoggingFilter extends Gen
         logger.debug(exception.getMessage(), exception);
         objectMapper.writeValue(response.getWriter(), exception);
     }
-
 }

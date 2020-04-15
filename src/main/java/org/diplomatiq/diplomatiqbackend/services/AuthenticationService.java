@@ -141,7 +141,7 @@ public class AuthenticationService {
         AuthenticationSession authenticationSession = new AuthenticationSession();
 
         String authenticationSessionId = AuthenticationSessionIdGenerator.generate();
-        authenticationSession.setAuthenticationSessionId(authenticationSessionId);
+        authenticationSession.setId(authenticationSessionId);
 
         byte[] authenticationSessionKeyBytes = authenticationSessionKeyBigInteger.toByteArray();
         authenticationSession.setAuthenticationSessionKey(authenticationSessionKeyBytes);
@@ -204,6 +204,18 @@ public class AuthenticationService {
         return new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     }
 
+    public byte[] getAuthenticationSessionKeyByAuthenticationSessionId(String authenticationSessionId) {
+        if (authenticationSessionId == null) {
+            throw new IllegalArgumentException("deviceId must not be null");
+        }
+
+        if (authenticationSessionId.equals("")) {
+            throw new IllegalArgumentException("deviceId must not be empty");
+        }
+
+        return new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    }
+
     private UserIdentity getDummyUserIdentity(byte[] serverEphemeralBytes) throws NoSuchAlgorithmException {
         final String emailAddress = "samsepi0l@diplomatiq.org";
 
@@ -248,14 +260,14 @@ public class AuthenticationService {
         userIdentity.setAuthentications(Set.of(authentication));
 
         UserDevice device = new UserDevice();
-        device.setDeviceId(DeviceIdGenerator.generate());
+        device.setId(DeviceIdGenerator.generate());
         device.setDeviceKey(DeviceKeyGenerator.generate());
         userIdentity.setDevices(Set.of(device));
 
         UserDeviceContainer deviceContainer = new UserDeviceContainer();
-        deviceContainer.setDeviceContainerId(DeviceContainerIdGenerator.generate());
+        deviceContainer.setId(DeviceContainerIdGenerator.generate());
         deviceContainer.setDeviceContainerKey(DeviceContainerKeyGenerator.generate());
-        device.setUserDeviceContainer(deviceContainer);
+        device.setUserDeviceContainers(Set.of(deviceContainer));
 
         return userIdentity;
     }
