@@ -1,5 +1,6 @@
-package org.diplomatiq.diplomatiqbackend.domain.models;
+package org.diplomatiq.diplomatiqbackend.domain.models.concrete;
 
+import org.diplomatiq.diplomatiqbackend.domain.models.base.AbstractCreationRecordedNodeEntity;
 import org.neo4j.ogm.annotation.*;
 
 import java.util.Collections;
@@ -7,11 +8,7 @@ import java.util.Comparator;
 import java.util.Set;
 
 @NodeEntity
-public class UserIdentity {
-    @Id
-    @GeneratedValue
-    private Long id;
-
+public class UserIdentity extends AbstractCreationRecordedNodeEntity {
     @Index(unique = true)
     private String emailAddress;
 

@@ -1,7 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.filters.authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.diplomatiq.diplomatiqbackend.domain.models.UserIdentity;
+import org.diplomatiq.diplomatiqbackend.domain.models.concrete.UserIdentity;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiException;
 import org.diplomatiq.diplomatiqbackend.exceptions.api.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingFilter;

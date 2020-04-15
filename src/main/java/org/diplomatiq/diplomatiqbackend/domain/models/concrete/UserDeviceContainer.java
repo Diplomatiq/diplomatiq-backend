@@ -1,30 +1,15 @@
-package org.diplomatiq.diplomatiqbackend.domain.models;
+package org.diplomatiq.diplomatiqbackend.domain.models.concrete;
 
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.Index;
+import org.diplomatiq.diplomatiqbackend.domain.models.base.AbstractCreationRecordedNodeEntity;
+import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
-public class UserDeviceContainer {
-    @Id
-    @GeneratedValue
-    private Long id;
-
-    @Index(unique = true)
-    private String deviceContainerId;
-
+@NodeEntity
+public class UserDeviceContainer extends AbstractCreationRecordedNodeEntity {
     private byte[] deviceContainerKey;
 
     @Relationship(type = "STORES_DATA_IN", direction = Relationship.INCOMING)
     private UserDevice userDevice;
-
-    public String getDeviceContainerId() {
-        return deviceContainerId;
-    }
-
-    public void setDeviceContainerId(String deviceContainerId) {
-        this.deviceContainerId = deviceContainerId;
-    }
 
     public byte[] getDeviceContainerKey() {
         return deviceContainerKey;

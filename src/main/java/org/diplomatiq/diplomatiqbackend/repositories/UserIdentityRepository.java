@@ -1,6 +1,6 @@
 package org.diplomatiq.diplomatiqbackend.repositories;
 
-import org.diplomatiq.diplomatiqbackend.domain.models.UserIdentity;
+import org.diplomatiq.diplomatiqbackend.domain.models.concrete.UserIdentity;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.stereotype.Repository;
 

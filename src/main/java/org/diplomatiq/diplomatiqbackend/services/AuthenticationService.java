@@ -2,7 +2,7 @@ package org.diplomatiq.diplomatiqbackend.services;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
-import org.diplomatiq.diplomatiqbackend.domain.models.*;
+import org.diplomatiq.diplomatiqbackend.domain.models.concrete.*;
 import org.diplomatiq.diplomatiqbackend.engines.PasswordStretchingEngine;
 import org.diplomatiq.diplomatiqbackend.exceptions.api.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.methods.entities.PasswordAuthenticationCompleteV1Request;
@@ -89,7 +89,7 @@ public class AuthenticationService {
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, abstractPasswordStretchingAlgorithmImpl,
             new SecureRandom());
 
-        Set<UserTemporarySRPLoginData> userTemporarySrpLoginData = currentAuthentication.getUserTemporarySrpLoginData();
+        Set<UserTemporarySRPLoginData> userTemporarySrpLoginData = currentAuthentication.getUserTemporarySrpLoginDatas();
         Set<ByteBuffer> savedServerEphemerals = userTemporarySrpLoginData.stream()
             .map(d -> ByteBuffer.wrap(d.getServerEphemeral()))
             .collect(Collectors.toSet());
@@ -244,7 +244,7 @@ public class AuthenticationService {
         authentication.setSrpSalt(srpSalt);
         authentication.setSrpVerifier(srpVerifierBytes);
         authentication.setPasswordStretchingAlgorithm(passwordStretchingAlgorithm);
-        authentication.setUserTemporarySrpLoginData(Set.of(userTemporarySRPLoginData));
+        authentication.setUserTemporarySrpLoginDatas(Set.of(userTemporarySRPLoginData));
         userIdentity.setAuthentications(Set.of(authentication));
 
         UserDevice device = new UserDevice();

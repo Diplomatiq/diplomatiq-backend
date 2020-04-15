@@ -1,35 +1,27 @@
-package org.diplomatiq.diplomatiqbackend.domain.models;
+package org.diplomatiq.diplomatiqbackend.domain.models.concrete;
 
+import org.diplomatiq.diplomatiqbackend.domain.models.base.AbstractCreationRecordedNodeEntity;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.passwordstretching.PasswordStretchingAlgorithm;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
 import java.util.Set;
 
 @NodeEntity
-public class UserAuthentication {
-    @Id
-    @GeneratedValue
-    private Long id;
-
+public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
     private Long version;
-
     private byte[] srpSalt;
-
     private byte[] srpVerifier;
-
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
+
+    @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_SRP_DATA")
+    private Set<UserTemporarySRPLoginData> userTemporarySrpLoginDatas;
+
+    @Relationship(type = "HAS_AUTHENTICATION_SESSION")
+    private Set<AuthenticationSession> authenticationSessions;
 
     @Relationship(type = "AUTHENTICATES_WITH", direction = Relationship.INCOMING)
     private UserIdentity userIdentity;
-
-    @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_SRP_DATA")
-    private Set<UserTemporarySRPLoginData> userTemporarySrpLoginData;
-
-    @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_AUTHENTICATION_SESSION")
-    private Set<AuthenticationSession> authenticationSessions;
 
     public Long getVersion() {
         return version;
@@ -63,20 +55,12 @@ public class UserAuthentication {
         this.passwordStretchingAlgorithm = passwordStretchingAlgorithm;
     }
 
-    public UserIdentity getUserIdentity() {
-        return userIdentity;
+    public Set<UserTemporarySRPLoginData> getUserTemporarySrpLoginDatas() {
+        return userTemporarySrpLoginDatas;
     }
 
-    public void setUserIdentity(UserIdentity userIdentity) {
-        this.userIdentity = userIdentity;
-    }
-
-    public Set<UserTemporarySRPLoginData> getUserTemporarySrpLoginData() {
-        return userTemporarySrpLoginData;
-    }
-
-    public void setUserTemporarySrpLoginData(Set<UserTemporarySRPLoginData> userTemporarySrpLoginData) {
-        this.userTemporarySrpLoginData = userTemporarySrpLoginData;
+    public void setUserTemporarySrpLoginDatas(Set<UserTemporarySRPLoginData> userTemporarySrpLoginDatas) {
+        this.userTemporarySrpLoginDatas = userTemporarySrpLoginDatas;
     }
 
     public Set<AuthenticationSession> getAuthenticationSessions() {
@@ -85,5 +69,13 @@ public class UserAuthentication {
 
     public void setAuthenticationSessions(Set<AuthenticationSession> authenticationSessions) {
         this.authenticationSessions = authenticationSessions;
+    }
+
+    public UserIdentity getUserIdentity() {
+        return userIdentity;
+    }
+
+    public void setUserIdentity(UserIdentity userIdentity) {
+        this.userIdentity = userIdentity;
     }
 }

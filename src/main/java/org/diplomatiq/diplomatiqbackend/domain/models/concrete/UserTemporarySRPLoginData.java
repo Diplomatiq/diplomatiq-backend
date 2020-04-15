@@ -1,14 +1,9 @@
-package org.diplomatiq.diplomatiqbackend.domain.models;
+package org.diplomatiq.diplomatiqbackend.domain.models.concrete;
 
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
+import org.diplomatiq.diplomatiqbackend.domain.models.base.AbstractCreationRecordedNodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
-public class UserTemporarySRPLoginData {
-    @Id
-    @GeneratedValue
-    private Long id;
-
+public class UserTemporarySRPLoginData extends AbstractCreationRecordedNodeEntity {
     private byte[] serverEphemeral;
 
     @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_SRP_DATA", direction = Relationship.INCOMING)
