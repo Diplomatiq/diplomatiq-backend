@@ -1,18 +1,22 @@
 package org.diplomatiq.diplomatiqbackend.services;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
-import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
-import org.diplomatiq.diplomatiqbackend.domain.models.concrete.*;
-import org.diplomatiq.diplomatiqbackend.engines.PasswordStretchingEngine;
+import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.AuthenticationSession;
+import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthentication;
+import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
+import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserTemporarySRPLoginData;
+import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.AuthenticationSessionHelper;
+import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserIdentityHelper;
+import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
+import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
+import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
 import org.diplomatiq.diplomatiqbackend.exceptions.api.UnauthorizedException;
-import org.diplomatiq.diplomatiqbackend.methods.entities.PasswordAuthenticationCompleteV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.PasswordAuthenticationCompleteV1Response;
-import org.diplomatiq.diplomatiqbackend.methods.entities.PasswordAuthenticationInitV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.PasswordAuthenticationInitV1Response;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
 import org.diplomatiq.diplomatiqbackend.repositories.UserIdentityRepository;
-import org.diplomatiq.diplomatiqbackend.utils.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
-import org.diplomatiq.diplomatiqbackend.utils.crypto.passwordstretching.PasswordStretchingAlgorithm;
-import org.diplomatiq.diplomatiqbackend.utils.crypto.random.*;
+import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.srp.RequestBoundaryCrossingSRP6Server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,9 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Optional;
@@ -38,10 +40,17 @@ public class AuthenticationService {
     @Autowired
     private PasswordStretchingEngine passwordStretchingEngine;
 
-    public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) throws NoSuchAlgorithmException {
-        String emailAddress = request.getEmailAddress();
-        UserIdentity userIdentity =
-            userIdentityRepository.findByEmailAddress(emailAddress).orElse(getDummyUserIdentity(null));
+    @Autowired
+    private UserIdentityHelper userIdentityHelper;
+
+    public byte[] getDeviceContainerKeyV1(String deviceContainerKey) {
+        return new byte[]{};
+    }
+
+    public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) {
+        String emailAddressDigestBase64 = request.getEmailAddressDigestBase64();
+        UserIdentity userIdentity = userIdentityRepository.findByEmailAddressDigestBase64(emailAddressDigestBase64)
+            .orElse(userIdentityHelper.dummyUserIdentity(null));
 
         UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
 
@@ -55,7 +64,7 @@ public class AuthenticationService {
 
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, passwordStretchingAlgorithmImpl,
-            SecureRandom.getInstanceStrong());
+            RandomUtils.getStrongSecureRandom());
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
         String serverEphemeralBase64 = Base64.getEncoder().encodeToString(serverEphemeralBigInteger.toByteArray());
@@ -67,13 +76,18 @@ public class AuthenticationService {
     }
 
     public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) throws NoSuchAlgorithmException {
-        String emailAddress = request.getEmailAddress();
+        String emailAddressDigestBase64 = request.getEmailAddressDigestBase64();
 
-        String serverEphemeralBase64 = request.getServerEphemeralBase64();
-        byte[] serverEphemeralBytes = Base64.getDecoder().decode(serverEphemeralBase64);
+        byte[] serverEphemeralBytes;
+        try {
+            String serverEphemeralBase64 = request.getServerEphemeralBase64();
+            serverEphemeralBytes = Base64.getDecoder().decode(serverEphemeralBase64);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Could not decode server ephemeral.", ex);
+        }
 
-        UserIdentity userIdentity =
-            userIdentityRepository.findByEmailAddress(emailAddress).orElse(getDummyUserIdentity(serverEphemeralBytes));
+        UserIdentity userIdentity = userIdentityRepository.findByEmailAddressDigestBase64(emailAddressDigestBase64)
+            .orElse(userIdentityHelper.dummyUserIdentity(serverEphemeralBytes));
 
         UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
 
@@ -87,9 +101,10 @@ public class AuthenticationService {
 
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, abstractPasswordStretchingAlgorithmImpl,
-            new SecureRandom());
+            RandomUtils.getStrongSecureRandom());
 
-        Set<UserTemporarySRPLoginData> userTemporarySrpLoginData = currentAuthentication.getUserTemporarySrpLoginDatas();
+        Set<UserTemporarySRPLoginData> userTemporarySrpLoginData =
+            currentAuthentication.getUserTemporarySrpLoginDatas();
         Set<ByteBuffer> savedServerEphemerals = userTemporarySrpLoginData.stream()
             .map(d -> ByteBuffer.wrap(d.getServerEphemeral()))
             .collect(Collectors.toSet());
@@ -100,9 +115,14 @@ public class AuthenticationService {
         BigInteger serverEphemeralBigInteger = new BigInteger(serverEphemeralBytes);
         srp.setB(serverEphemeralBigInteger);
 
-        String clientEphemeralBase64 = request.getClientEphemeralBase64();
-        byte[] clientEphemeralBytes = Base64.getDecoder().decode(clientEphemeralBase64);
-        BigInteger clientEphemeralBigInteger = new BigInteger(clientEphemeralBytes);
+        BigInteger clientEphemeralBigInteger;
+        try {
+            String clientEphemeralBase64 = request.getClientEphemeralBase64();
+            byte[] clientEphemeralBytes = Base64.getDecoder().decode(clientEphemeralBase64);
+            clientEphemeralBigInteger = new BigInteger(clientEphemeralBytes);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Could not decode client ephemeral.", ex);
+        }
 
         try {
             srp.calculateSecret(clientEphemeralBigInteger);
@@ -110,8 +130,14 @@ public class AuthenticationService {
             throw new UnauthorizedException("SRP secret could not be calculated.", ex);
         }
 
-        String clientProofHex = request.getClientProofBase64();
-        BigInteger clientProofBigInteger = new BigInteger(clientProofHex, 16);
+        BigInteger clientProofBigInteger;
+        try {
+            String clientProofBase64 = request.getClientProofBase64();
+            byte[] clientProofBytes = Base64.getDecoder().decode(clientProofBase64);
+            clientProofBigInteger = new BigInteger(clientProofBytes);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Could not decode client proof.", ex);
+        }
 
         boolean clientProofVerified;
         try {
@@ -135,16 +161,12 @@ public class AuthenticationService {
         try {
             authenticationSessionKeyBigInteger = srp.calculateSessionKey();
         } catch (Exception ex) {
-            throw new UnauthorizedException("Device key could not be calculated.", ex);
+            throw new UnauthorizedException("Session key could not be calculated.", ex);
         }
 
-        AuthenticationSession authenticationSession = new AuthenticationSession();
-
-        String authenticationSessionId = AuthenticationSessionIdGenerator.generate();
-        authenticationSession.setId(authenticationSessionId);
-
         byte[] authenticationSessionKeyBytes = authenticationSessionKeyBigInteger.toByteArray();
-        authenticationSession.setAuthenticationSessionKey(authenticationSessionKeyBytes);
+        AuthenticationSession authenticationSession =
+            AuthenticationSessionHelper.createAuthenticationSessionWithKey(authenticationSessionKeyBytes);
 
         Set<AuthenticationSession> authenticationSessions =
             Optional.ofNullable(currentAuthentication.getAuthenticationSessions()).orElse(new HashSet<>());
@@ -153,9 +175,10 @@ public class AuthenticationService {
 
         userIdentityRepository.save(userIdentity);
 
-        String serverProofHex = serverProofBigInteger.toString(16);
+        String serverProofBase64 = Base64.getEncoder().encodeToString(serverProofBigInteger.toByteArray());
+        String authenticationSessionId = authenticationSession.getId();
 
-        return new PasswordAuthenticationCompleteV1Response(serverProofHex, authenticationSessionId);
+        return new PasswordAuthenticationCompleteV1Response(serverProofBase64, authenticationSessionId);
     }
 
     public String validateAndDecryptEncryptedSessionId(String encryptedSessionId, String deviceId) {
@@ -189,7 +212,7 @@ public class AuthenticationService {
             throw new IllegalArgumentException("sessionId must not be empty");
         }
 
-        return getDummyUserIdentity(null);
+        return userIdentityHelper.dummyUserIdentity(null);
     }
 
     public byte[] getDeviceKeyByDeviceId(String deviceId) {
@@ -216,59 +239,4 @@ public class AuthenticationService {
         return new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     }
 
-    private UserIdentity getDummyUserIdentity(byte[] serverEphemeralBytes) throws NoSuchAlgorithmException {
-        final String emailAddress = "samsepi0l@diplomatiq.org";
-
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = passwordStretchingEngine.getLatestAlgorithm();
-        AbstractPasswordStretchingAlgorithmImpl passwordStretchingAlgorithmImpl =
-            passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
-
-        byte[] srpSalt = RandomUtils.strongBytes(32);
-
-        SRP6VerifierGenerator srp6VerifierGenerator = new SRP6VerifierGenerator();
-        srp6VerifierGenerator.init(SRP6StandardGroups.rfc5054_8192, passwordStretchingAlgorithmImpl);
-
-        byte[] emailAddressBytes = emailAddress.getBytes(StandardCharsets.UTF_8);
-
-        String password = RandomUtils.alphanumericString(32);
-        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
-
-        BigInteger srpVerifierBigInteger = srp6VerifierGenerator.generateVerifier(srpSalt, emailAddressBytes,
-            passwordBytes);
-        byte[] srpVerifierBytes = srpVerifierBigInteger.toByteArray();
-
-        BigInteger serverEphemeralBigInt = serverEphemeralBytes != null
-            ? new BigInteger(serverEphemeralBytes)
-            : new BigInteger("5");
-
-        UserIdentity userIdentity = new UserIdentity();
-
-        userIdentity.setEmailAddress("samsepi0l@diplomatiq.org");
-        userIdentity.setFirstName("Sam");
-        userIdentity.setLastName("Sepiol");
-        userIdentity.setValidated(true);
-
-        UserTemporarySRPLoginData userTemporarySRPLoginData = new UserTemporarySRPLoginData();
-        userTemporarySRPLoginData.setServerEphemeral(serverEphemeralBigInt.toByteArray());
-
-        UserAuthentication authentication = new UserAuthentication();
-        authentication.setVersion(1L);
-        authentication.setSrpSalt(srpSalt);
-        authentication.setSrpVerifier(srpVerifierBytes);
-        authentication.setPasswordStretchingAlgorithm(passwordStretchingAlgorithm);
-        authentication.setUserTemporarySrpLoginDatas(Set.of(userTemporarySRPLoginData));
-        userIdentity.setAuthentications(Set.of(authentication));
-
-        UserDevice device = new UserDevice();
-        device.setId(DeviceIdGenerator.generate());
-        device.setDeviceKey(DeviceKeyGenerator.generate());
-        userIdentity.setDevices(Set.of(device));
-
-        UserDeviceContainer deviceContainer = new UserDeviceContainer();
-        deviceContainer.setId(DeviceContainerIdGenerator.generate());
-        deviceContainer.setDeviceContainerKey(DeviceContainerKeyGenerator.generate());
-        device.setUserDeviceContainers(Set.of(deviceContainer));
-
-        return userIdentity;
-    }
 }

@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
+    private static final String SIGNED_HEADERS_HEADER_NAME = "SignedHeaders";
 
     private AuthenticationService authenticationService;
 
@@ -56,8 +57,8 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
 
     }
 
-    private void verifySignature(ContentCachingRequestWrapper request) throws NoSuchAlgorithmException,
-        InvalidKeyException, UnauthorizedException {
+    private void verifySignature(ContentCachingRequestWrapper request) throws InvalidKeyException,
+        UnauthorizedException, NoSuchAlgorithmException {
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.equals("")) {
             throw new UnauthorizedException("Authorization header must not be null or empty.", null);
@@ -108,7 +109,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
 
-        String signedHeaderNamesString = request.getHeader("SignedHeaders");
+        String signedHeaderNamesString = request.getHeader(SIGNED_HEADERS_HEADER_NAME);
         if (signedHeaderNamesString == null || signedHeaderNamesString.equals("")) {
             throw new UnauthorizedException("SignedHeaders header must not be null or empty.", null);
         }
