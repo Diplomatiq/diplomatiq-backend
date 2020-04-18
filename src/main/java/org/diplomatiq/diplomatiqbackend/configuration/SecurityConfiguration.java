@@ -23,7 +23,6 @@ import java.util.Set;
 
 @EnableWebSecurity
 public class SecurityConfiguration {
-
     @Configuration
     @Order(1)
     public static class OpenApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
@@ -99,7 +98,6 @@ public class SecurityConfiguration {
 
     @Configuration
     public static class DefaultSecurityConfiguration extends WebSecurityConfigurerAdapter {
-
         private final Set<String> UNAUTHENTICATED_PATHS = Collections.unmodifiableSet(
             Set.of(
                 "/",
@@ -195,7 +193,5 @@ public class SecurityConfiguration {
             http.rememberMe().disable();
             http.requestCache().disable();
         }
-
     }
-
 }

@@ -1,5 +1,8 @@
 package org.diplomatiq.diplomatiqbackend.methods.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.RegisterUserV1Request;
@@ -20,6 +23,7 @@ import javax.validation.constraints.NotBlank;
 import java.security.NoSuchAlgorithmException;
 
 @RestController
+@Tag(name = "Unauthenticated methods", description = "These methods are available without authentication and request signing.")
 public class UnauthenticatedMethods {
     @Autowired
     private UserIdentityService userIdentityService;
@@ -30,12 +34,21 @@ public class UnauthenticatedMethods {
     @Autowired
     private AuthenticationService authenticationService;
 
+    @Operation(
+        summary = "Redirect to the website",
+        description = "Calling this endpoint issues a temporary redirect (HTTP 307) to https://www.diplomatiq.org."
+    )
+    @ApiResponse(
+        description = "—",
+        responseCode = "307"
+    )
+//    @SecurityRequirement(name = "AuthenticationSessionId")
     @RequestMapping(
         name = "rootRedirect",
         path = "",
         method = RequestMethod.GET
     )
-    public ResponseEntity rootRedirect() {
+    public ResponseEntity<Void> rootRedirect() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Location", "https://www.diplomatiq.org");
         return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);

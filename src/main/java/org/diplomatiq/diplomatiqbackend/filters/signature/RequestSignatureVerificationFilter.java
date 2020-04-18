@@ -115,7 +115,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         }
 
         Set<String> signedHeaderNames = Set.of(signedHeaderNamesString.split(";"));
-        for (String mandatoryHeaderName : DiplomatiqHeaders.RequiredSignedSessionV1Headers.get(httpRequestMethod)) {
+        for (String mandatoryHeaderName : DiplomatiqHeaders.SignedSessionV1SignedHeaders) {
             if (!signedHeaderNames.contains(mandatoryHeaderName.toLowerCase())) {
                 throw new UnauthorizedException(String.format("Mandatory header %s is missing from SignedHeaders.",
                     mandatoryHeaderName), null);
@@ -187,7 +187,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
 
         Set<String> signedHeaderNames = Set.of(signedHeaderNamesString.split(";"));
         for (String mandatoryHeaderName :
-            DiplomatiqHeaders.RequiredSignedAuthenticationSessionV1Headers.get(httpRequestMethod)) {
+            DiplomatiqHeaders.SignedAuthenticationSessionV1SignedHeaders) {
             if (!signedHeaderNames.contains(mandatoryHeaderName.toLowerCase())) {
                 throw new UnauthorizedException(String.format("Mandatory header %s is missing from SignedHeaders.",
                     mandatoryHeaderName), null);
