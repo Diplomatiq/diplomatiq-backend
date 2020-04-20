@@ -21,7 +21,8 @@ public class OpenAPIConfiguration {
             .info(
                 new Info()
                     .title("Diplomatiq API")
-                    .description("This is the OpenAPI of the Diplomatiq API.")
+                    .description("This is the OpenAPI documentation of the Diplomatiq API.")
+                    .version("1.0.0")
             ).servers(
                 List.of(
                     new Server()

@@ -1,16 +1,22 @@
 package org.diplomatiq.diplomatiqbackend.methods.entities.requests;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import javax.validation.constraints.NotBlank;
 
 public class PasswordAuthenticationInitV1Request {
+    @Schema(
+        description = "The email address of the user",
+        example = "samsepi0l@diplomatiq.org"
+    )
     @NotBlank
-    private String emailAddressDigestBase64;
+    private String emailAddress;
 
-    public String getEmailAddressDigestBase64() {
-        return emailAddressDigestBase64;
+    public String getEmailAddress() {
+        return emailAddress;
     }
 
-    public void setEmailAddressDigestBase64(String emailAddressDigestBase64) {
-        this.emailAddressDigestBase64 = emailAddressDigestBase64;
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
     }
 }

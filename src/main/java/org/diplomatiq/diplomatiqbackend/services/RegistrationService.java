@@ -4,9 +4,7 @@ import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthentica
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserAuthenticationHelper;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserIdentityHelper;
-import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
-import org.diplomatiq.diplomatiqbackend.exceptions.api.BadRequestException;
-import org.diplomatiq.diplomatiqbackend.exceptions.api.InternalServerErrorException;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.RegisterUserV1Request;
 import org.diplomatiq.diplomatiqbackend.repositories.UserIdentityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +27,7 @@ public class RegistrationService {
     @Autowired
     private UserAuthenticationHelper userAuthenticationHelper;
 
-    public void registerUser(RegisterUserV1Request request) {
+    public void registerUser(RegisterUserV1Request request) throws NoSuchAlgorithmException {
         byte[] srpSalt;
         try {
             srpSalt = Base64.getDecoder().decode(request.getSrpSaltBase64());
@@ -44,24 +42,12 @@ public class RegistrationService {
             throw new BadRequestException("SRP verifier could not be decoded.", ex);
         }
 
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm;
-        try {
-            passwordStretchingAlgorithm = PasswordStretchingAlgorithm.valueOf(request.getPasswordStretchingAlgorithm());
-        } catch (IllegalArgumentException ex) {
-            throw new BadRequestException("Unknown password stretching algorithm.", ex);
-        }
-
-        UserIdentity userIdentity = null;
-        try {
-            userIdentity = userIdentityHelper.createUserIdentity(request.getEmailAddress(),
-                request.getFirstName(), request.getLastName());
-        } catch (NoSuchAlgorithmException ex) {
-            throw new InternalServerErrorException(null, ex);
-        }
+        UserIdentity userIdentity = userIdentityHelper.createUserIdentity(request.getEmailAddress(),
+            request.getFirstName(), request.getLastName());
 
         UserAuthentication userAuthentication =
             userAuthenticationHelper.createUserAuthenticationForRegistration(srpSalt, srpVerifier,
-                passwordStretchingAlgorithm);
+                request.getPasswordStretchingAlgorithm());
 
         userIdentity.setAuthentications(Set.of(userAuthentication));
         userIdentityRepository.save(userIdentity);

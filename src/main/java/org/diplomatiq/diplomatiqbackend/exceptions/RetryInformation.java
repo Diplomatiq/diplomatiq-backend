@@ -1,5 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.exceptions;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class RetryInformation {
     private enum BackoffStrategy {
         constant,
@@ -8,12 +10,29 @@ public class RetryInformation {
         jittered
     }
 
-    private Integer maxRetryCount;
+    @Schema(
+        description = "The client should retry `maxRetryCount` times at most",
+        example = "5"
+    )
+    private int maxRetryCount;
+
+    @Schema(
+        description = "The client should wait before each retry as specified by the `backoffStrategy` (see [https://github.com/Diplomatiq/resily#retrypolicy](https://github.com/Diplomatiq/resily#retrypolicy))"
+    )
     private BackoffStrategy backoffStrategy;
-    private Integer delayMs;
+
+    @Schema(
+        description = "The basis delay of the backoff in ms",
+        example = "1000"
+    )
+    private int delayMs;
+
+    @Schema(
+        description = "If `true`, the first retry can be immediate"
+    )
     private boolean fastFirst;
 
-    public RetryInformation(Integer maxRetryCount, BackoffStrategy backoffStrategy, Integer delayMs,
+    public RetryInformation(int maxRetryCount, BackoffStrategy backoffStrategy, int delayMs,
                             boolean fastFirst) {
         this.maxRetryCount = maxRetryCount;
         this.backoffStrategy = backoffStrategy;
@@ -21,7 +40,7 @@ public class RetryInformation {
         this.fastFirst = fastFirst;
     }
 
-    public Integer getMaxRetryCount() {
+    public int getMaxRetryCount() {
         return maxRetryCount;
     }
 
@@ -29,7 +48,7 @@ public class RetryInformation {
         return backoffStrategy;
     }
 
-    public Integer getDelayMs() {
+    public int getDelayMs() {
         return delayMs;
     }
 

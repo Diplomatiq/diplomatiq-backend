@@ -1,6 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.SessionAuthenticationFilter;
 import org.diplomatiq.diplomatiqbackend.filters.signature.RequestSignatureVerificationFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
@@ -100,9 +101,10 @@ public class SecurityConfiguration {
     public static class DefaultSecurityConfiguration extends WebSecurityConfigurerAdapter {
         private final Set<String> UNAUTHENTICATED_PATHS = Collections.unmodifiableSet(
             Set.of(
-                "/",
+//                "/",
                 "/get-challenge-v1",
-                "/get-device-container-key-v1"
+                "/get-device-container-key-v1",
+                "/register-user-v1"
             )
         );
 
@@ -111,6 +113,9 @@ public class SecurityConfiguration {
 
         @Autowired
         private ObjectMapper objectMapper;
+
+        @Autowired
+        private GlobalExceptionHandler globalExceptionHandler;
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
@@ -179,9 +184,9 @@ public class SecurityConfiguration {
             RequestMatcher authFiltersRequestMatcher =
                 httpServletRequest -> !UNAUTHENTICATED_PATHS.contains(httpServletRequest.getServletPath());
             http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher, objectMapper,
-                authenticationService), LogoutFilter.class);
+                authenticationService, globalExceptionHandler), LogoutFilter.class);
             http.addFilterAfter(new SessionAuthenticationFilter(authFiltersRequestMatcher, objectMapper,
-                    authenticationService),
+                    authenticationService, globalExceptionHandler),
                 RequestSignatureVerificationFilter.class);
 
             http.anonymous().disable();

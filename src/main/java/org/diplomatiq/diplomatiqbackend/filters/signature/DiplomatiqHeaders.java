@@ -24,7 +24,7 @@ public class DiplomatiqHeaders {
         );
         headersWithDescriptions.put(
             KnownHeader.Authorization,
-            "The signature of the request in '${authenticationScheme} ${signature}' format."
+            "The signature of the request in \"${authenticationScheme} ${signature}\" format."
         );
         headersWithDescriptions.put(
             KnownHeader.ClientId,

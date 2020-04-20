@@ -1,6 +1,6 @@
 package org.diplomatiq.diplomatiqbackend.exceptions;
 
-import org.diplomatiq.diplomatiqbackend.exceptions.http.*;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
@@ -26,138 +26,165 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    @ExceptionHandler({ DiplomatiqApiException.class })
-    protected ResponseEntity<Object> handleDiplomatiqApIException(DiplomatiqApiException ex, WebRequest request) {
-        return handleExceptionInternal(ex, ex, new HttpHeaders(), ex.getHttpStatusCode(), request);
+    @ExceptionHandler({ UnauthorizedException.class })
+    public ResponseEntity<Object> handleUnauthorizedException(UnauthorizedException exception, WebRequest request) {
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.Unauthorized, exception,
+                null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @ExceptionHandler({ Exception.class })
-    protected ResponseEntity<Object> handleEverything(Exception ex, WebRequest request) {
-        InternalServerErrorException exception = new InternalServerErrorException(null, ex);
-        return handleExceptionInternal(ex, exception, new HttpHeaders(),
-            exception.getHttpStatusCode(), request);
+    public ResponseEntity<Object> handleUnknownException(Exception exception, WebRequest request) {
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.InternalServerError,
+                exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex,
+    protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException exception,
                                                                          HttpHeaders headers, HttpStatus status,
                                                                          WebRequest request) {
-        MethodNotAllowedException exception = new MethodNotAllowedException();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.MethodNotAllowed, exception,
+                null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex,
+    protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException exception,
                                                                      HttpHeaders headers, HttpStatus status,
                                                                      WebRequest request) {
-        UnsupportedMediaTypeException exception = new UnsupportedMediaTypeException();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.UnsupportedMediaType,
+                exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleHttpMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException ex,
+    protected ResponseEntity<Object> handleHttpMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException exception,
                                                                       HttpHeaders headers, HttpStatus status,
                                                                       WebRequest request) {
-        NotAcceptableException exception = new NotAcceptableException();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.NotAcceptable, exception,
+                null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleMissingPathVariable(MissingPathVariableException ex, HttpHeaders headers,
+    protected ResponseEntity<Object> handleMissingPathVariable(MissingPathVariableException exception,
+                                                               HttpHeaders headers,
                                                                HttpStatus status, WebRequest request) {
-        BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException ex,
+    protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException exception,
                                                                           HttpHeaders headers, HttpStatus status,
                                                                           WebRequest request) {
-        BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleServletRequestBindingException(ServletRequestBindingException ex,
+    protected ResponseEntity<Object> handleServletRequestBindingException(ServletRequestBindingException exception,
                                                                           HttpHeaders headers, HttpStatus status,
                                                                           WebRequest request) {
-        BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleConversionNotSupported(ConversionNotSupportedException ex,
+    protected ResponseEntity<Object> handleConversionNotSupported(ConversionNotSupportedException exception,
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
-        InternalServerErrorException exception = new InternalServerErrorException();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.InternalServerError,
+                exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
+    protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException exception, HttpHeaders headers,
                                                         HttpStatus status, WebRequest request) {
-        BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException exception,
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
-        InternalServerErrorException exception = new InternalServerErrorException();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleHttpMessageNotWritable(HttpMessageNotWritableException ex,
+    protected ResponseEntity<Object> handleHttpMessageNotWritable(HttpMessageNotWritableException exception,
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
-        InternalServerErrorException exception = new InternalServerErrorException();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.InternalServerError,
+                exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception,
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
-        BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleMissingServletRequestPart(MissingServletRequestPartException ex,
+    protected ResponseEntity<Object> handleMissingServletRequestPart(MissingServletRequestPartException exception,
                                                                      HttpHeaders headers, HttpStatus status,
                                                                      WebRequest request) {
-        BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status,
+    protected ResponseEntity<Object> handleBindException(BindException exception, HttpHeaders headers,
+                                                         HttpStatus status,
                                                          WebRequest request) {
-        BadRequestExeption exception = new BadRequestExeption();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers,
+    protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException exception,
+                                                                   HttpHeaders headers,
                                                                    HttpStatus status, WebRequest request) {
-        NotFoundException exception = new NotFoundException();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.NotFound, exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
     @Override
-    protected ResponseEntity<Object> handleAsyncRequestTimeoutException(AsyncRequestTimeoutException ex,
+    protected ResponseEntity<Object> handleAsyncRequestTimeoutException(AsyncRequestTimeoutException exception,
                                                                         HttpHeaders headers, HttpStatus status,
                                                                         WebRequest request) {
-        InternalServerErrorException exception = new InternalServerErrorException();
-        return handleExceptionInternal(ex, exception, headers, exception.getHttpStatusCode(), request);
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.InternalServerError,
+                exception, null);
+        return handleDiplomatiqApiException(apiError);
     }
 
-    @Override
-    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
-                                                             HttpStatus status, WebRequest request) {
-        headers.addIfAbsent("Content-Type", "application/json");
-        return new ResponseEntity<>(body, headers, status);
+    protected ResponseEntity<Object> handleDiplomatiqApiException(DiplomatiqApiError apiError) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Content-Type", "application/json");
+        return new ResponseEntity<>(apiError, httpHeaders, DiplomatiqApiError.DIPLOMATIQ_API_ERROR_STATUS_CODE);
     }
 }

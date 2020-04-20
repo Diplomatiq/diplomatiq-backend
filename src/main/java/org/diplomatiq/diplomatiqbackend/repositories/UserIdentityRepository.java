@@ -9,5 +9,4 @@ import java.util.Optional;
 @Repository
 public interface UserIdentityRepository extends Neo4jRepository<UserIdentity, String> {
     Optional<UserIdentity> findByEmailAddress(String emailAddress);
-    Optional<UserIdentity> findByEmailAddressDigestBase64(String emailAddressDigestBase64);
 }

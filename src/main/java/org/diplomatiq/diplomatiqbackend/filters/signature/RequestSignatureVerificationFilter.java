@@ -1,12 +1,13 @@
 package org.diplomatiq.diplomatiqbackend.filters.signature;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiException;
-import org.diplomatiq.diplomatiqbackend.exceptions.api.UnauthorizedException;
-import org.diplomatiq.diplomatiqbackend.exceptions.http.MethodNotAllowedException;
-import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingFilter;
+import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
+import org.diplomatiq.diplomatiqbackend.filters.JsonResponseWritingFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.crypto.Mac;
@@ -27,15 +28,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
+public class RequestSignatureVerificationFilter extends JsonResponseWritingFilter {
     private static final String SIGNED_HEADERS_HEADER_NAME = "SignedHeaders";
 
     private AuthenticationService authenticationService;
+    private GlobalExceptionHandler globalExceptionHandler;
 
     public RequestSignatureVerificationFilter(RequestMatcher requestMatcher, ObjectMapper objectMapper,
-                                              AuthenticationService authenticationService) {
+                                              AuthenticationService authenticationService,
+                                              GlobalExceptionHandler globalExceptionHandler) {
         super(requestMatcher, objectMapper);
         this.authenticationService = authenticationService;
+        this.globalExceptionHandler = globalExceptionHandler;
     }
 
     @Override
@@ -48,11 +52,14 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         try {
             verifySignature(wrappedRequest);
             filterChain.doFilter(wrappedRequest, servletResponse);
-        } catch (DiplomatiqApiException ex) {
-            writeJsonErrorResponse(response, ex);
+        } catch (UnauthorizedException ex) {
+            ResponseEntity<Object> responseEntity = globalExceptionHandler.handleUnauthorizedException(ex,
+                new ServletWebRequest(request));
+            writeJsonResponse(response, responseEntity);
         } catch (Exception ex) {
-            writeJsonErrorResponse(response, new UnauthorizedException("Signature verification failed because of an " +
-                "unknown error.", ex));
+            ResponseEntity<Object> responseEntity = globalExceptionHandler.handleUnknownException(ex,
+                new ServletWebRequest(request));
+            writeJsonResponse(response, responseEntity);
         }
 
     }
@@ -102,10 +109,6 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         }
 
         String httpRequestMethod = request.getMethod().toUpperCase();
-        if (!DiplomatiqMethods.AllowedRequestMethods.contains(httpRequestMethod)) {
-            throw new MethodNotAllowedException(String.format("Method %s is not allowed.", httpRequestMethod), null);
-        }
-
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
 
@@ -173,10 +176,6 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         }
 
         String httpRequestMethod = request.getMethod().toUpperCase();
-        if (!DiplomatiqMethods.AllowedRequestMethods.contains(httpRequestMethod)) {
-            throw new MethodNotAllowedException(String.format("Method %s is not allowed.", httpRequestMethod), null);
-        }
-
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
 

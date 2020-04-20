@@ -10,7 +10,7 @@ import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserIdentityHelp
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
-import org.diplomatiq.diplomatiqbackend.exceptions.api.UnauthorizedException;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
@@ -48,8 +48,8 @@ public class AuthenticationService {
     }
 
     public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) {
-        String emailAddressDigestBase64 = request.getEmailAddressDigestBase64();
-        UserIdentity userIdentity = userIdentityRepository.findByEmailAddressDigestBase64(emailAddressDigestBase64)
+        String emailAddress = request.getEmailAddress();
+        UserIdentity userIdentity = userIdentityRepository.findByEmailAddress(emailAddress)
             .orElse(userIdentityHelper.dummyUserIdentity(null));
 
         UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
@@ -76,7 +76,7 @@ public class AuthenticationService {
     }
 
     public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) throws NoSuchAlgorithmException {
-        String emailAddressDigestBase64 = request.getEmailAddressDigestBase64();
+        String emailAddress = request.getEmailAddress();
 
         byte[] serverEphemeralBytes;
         try {
@@ -86,7 +86,7 @@ public class AuthenticationService {
             throw new UnauthorizedException("Could not decode server ephemeral.", ex);
         }
 
-        UserIdentity userIdentity = userIdentityRepository.findByEmailAddressDigestBase64(emailAddressDigestBase64)
+        UserIdentity userIdentity = userIdentityRepository.findByEmailAddress(emailAddress)
             .orElse(userIdentityHelper.dummyUserIdentity(serverEphemeralBytes));
 
         UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
