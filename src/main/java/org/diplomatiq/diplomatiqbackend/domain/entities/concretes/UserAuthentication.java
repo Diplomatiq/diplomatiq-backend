@@ -1,17 +1,24 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
+import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedBytesConverter;
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractCreationRecordedNodeEntity;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import java.util.Set;
 
 @NodeEntity
 public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
     private Long version;
+
+    @Convert(EncryptedBytesConverter.class)
     private byte[] srpSalt;
+
+    @Convert(EncryptedBytesConverter.class)
     private byte[] srpVerifier;
+
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
 
     @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_SRP_DATA")

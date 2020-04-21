@@ -6,17 +6,74 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.nio.ByteBuffer;
+import java.util.Base64;
+
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class UnauthenticatedMethodsTests {
 
     @Autowired
     WebTestClient webTestClient;
 
+//    @Test
+//    public void rootRedirect() {
+//        webTestClient.get().uri("/").exchange()
+//            .expectStatus().isTemporaryRedirect()
+//            .expectHeader().valueEquals("Location", "https://www.diplomatiq.org");
+//    }
+
     @Test
-    public void rootRedirect() {
-        webTestClient.get().uri("/").exchange()
-            .expectStatus().isTemporaryRedirect()
-            .expectHeader().valueEquals("Location", "https://www.diplomatiq.org");
+    public void test1() {
+        ByteBuffer b = ByteBuffer.allocate(4);
+        int i = 0;
+        b.putInt(i);
+        byte[] a = b.array();
+        String s = Base64.getEncoder().encodeToString(a);
+        System.out.println(i);
+        System.out.println(s);
     }
 
+    @Test
+    public void test2() {
+        ByteBuffer b = ByteBuffer.allocate(4);
+        int i = 254;
+        b.putInt(i);
+        byte[] a = b.array();
+        String s = Base64.getEncoder().encodeToString(a);
+        System.out.println(i);
+        System.out.println(s);
+    }
+
+    @Test
+    public void test3() {
+        ByteBuffer b = ByteBuffer.allocate(4);
+        int i = 255;
+        b.putInt(i);
+        byte[] a = b.array();
+        String s = Base64.getEncoder().encodeToString(a);
+        System.out.println(i);
+        System.out.println(s);
+    }
+
+    @Test
+    public void test4() {
+        ByteBuffer b = ByteBuffer.allocate(4);
+        int i = 256;
+        b.putInt(i);
+        byte[] a = b.array();
+        String s = Base64.getEncoder().encodeToString(a);
+        System.out.println(i);
+        System.out.println(s);
+    }
+
+    @Test
+    public void test5() {
+        ByteBuffer b = ByteBuffer.allocate(4);
+        int i = 2147483647;
+        b.putInt(i);
+        byte[] a = b.array();
+        String s = Base64.getEncoder().encodeToString(a);
+        System.out.println(i);
+        System.out.println(s);
+    }
 }

@@ -1,14 +1,19 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
+import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedBytesConverter;
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractCreationRecordedNodeEntity;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import java.util.Set;
 
 @NodeEntity
 public class UserDevice extends AbstractCreationRecordedNodeEntity {
+    @Convert(EncryptedBytesConverter.class)
     private byte[] deviceKey;
+
+    @Convert(EncryptedBytesConverter.class)
     private byte[] sessionToken;
 
     @Relationship(type = "STORES_DATA_IN")
