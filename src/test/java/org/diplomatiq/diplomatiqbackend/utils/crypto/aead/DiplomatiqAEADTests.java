@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 
 public class DiplomatiqAEADTests {
     private void checkSerializationFormat(byte[] aeadBytes, boolean hasCiphertext, boolean hasAad) throws IOException {
