@@ -98,6 +98,11 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.authy</groupId>
+            <artifactId>authy-java</artifactId>
+            <version>1.5.1</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
