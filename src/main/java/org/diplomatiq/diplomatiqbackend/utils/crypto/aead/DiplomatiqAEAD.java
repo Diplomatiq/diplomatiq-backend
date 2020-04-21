@@ -1,5 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.utils.crypto.aead;
 
+import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -13,7 +15,6 @@ import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 /**
  * AEAD (Authenticated Encryption with Associated Data) structure with binary serialization and deserialization
@@ -65,41 +66,26 @@ public class DiplomatiqAEAD {
             throw new IllegalArgumentException("Key length must be 256 bits.");
         }
 
+        byte[] initializationVector = RandomUtils.strongBytes(INITIALIZATION_VECTOR_LENGTH_BYTES);
+
         Cipher cipher = Cipher.getInstance(AES_GCM_NOPADDING);
-
         SecretKeySpec secretKeySpec = new SecretKeySpec(key, AES);
-
-        byte[] initializationVector = new byte[INITIALIZATION_VECTOR_LENGTH_BYTES];
-        SecureRandom strongRandom = SecureRandom.getInstanceStrong();
-        strongRandom.nextBytes(initializationVector);
         GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(AUTHENTICATION_TAG_LENGTH_BYTES * 8,
             initializationVector);
 
         cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, gcmParameterSpec);
-
-        if (aad.length > 0) {
-            cipher.updateAAD(aad);
-        }
-
+        cipher.updateAAD(aad);
         byte[] ciphertextWithAuthenticationTag = cipher.doFinal(plaintext);
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
         byteArrayOutputStream.write(INITIALIZATION_VECTOR_LENGTH_BYTES);
-
-        byte[] aadLengthBytes = ByteBuffer.allocate(4).putInt(aad.length).array();
-        byteArrayOutputStream.write(aadLengthBytes);
-
-        byte[] ciphertextLengthBytes = ByteBuffer.allocate(4).putInt(plaintext.length).array();
-        byteArrayOutputStream.write(ciphertextLengthBytes);
-
+        byteArrayOutputStream.write(ByteBuffer.allocate(4).putInt(aad.length).array());
+        byteArrayOutputStream.write(ByteBuffer.allocate(4).putInt(plaintext.length).array());
         byteArrayOutputStream.write(AUTHENTICATION_TAG_LENGTH_BYTES);
+
         byteArrayOutputStream.write(initializationVector);
-
-        if (aad.length > 0) {
-            byteArrayOutputStream.write(aad);
-        }
-
+        byteArrayOutputStream.write(aad);
         byteArrayOutputStream.write(ciphertextWithAuthenticationTag);
 
         return byteArrayOutputStream.toByteArray();
@@ -117,25 +103,19 @@ public class DiplomatiqAEAD {
         int authenticationTagLength = byteArrayInputStream.read();
 
         byte[] initializationVector = byteArrayInputStream.readNBytes(initializationVectorLength);
-        byte[] authenticated = aadLength > 0 ? byteArrayInputStream.readNBytes(aadLength) : new byte[0];
+        byte[] aad = byteArrayInputStream.readNBytes(aadLength);
         byte[] ciphertextWithAuthenticationTag =
             byteArrayInputStream.readNBytes(ciphertextLength + authenticationTagLength);
 
         Cipher cipher = Cipher.getInstance(AES_GCM_NOPADDING);
-
         SecretKeySpec secretKeySpec = new SecretKeySpec(key, AES);
-
         GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(AUTHENTICATION_TAG_LENGTH_BYTES * 8,
             initializationVector);
 
         cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, gcmParameterSpec);
+        cipher.updateAAD(aad);
+        byte[] plaintext = cipher.doFinal(ciphertextWithAuthenticationTag);
 
-        if (authenticated.length > 0) {
-            cipher.updateAAD(authenticated);
-        }
-
-        byte[] encrypted = cipher.doFinal(ciphertextWithAuthenticationTag);
-
-        return new DiplomatiqAEAD(encrypted, authenticated);
+        return new DiplomatiqAEAD(plaintext, aad);
     }
 }
