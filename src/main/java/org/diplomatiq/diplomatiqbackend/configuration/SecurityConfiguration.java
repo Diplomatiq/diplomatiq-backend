@@ -5,6 +5,8 @@ import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqMethods;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationFilter;
+import org.diplomatiq.diplomatiqbackend.filters.clockdiscrepancy.ClockDiscrepancyFilter;
+import org.diplomatiq.diplomatiqbackend.filters.requestchecker.RequestCheckerFilter;
 import org.diplomatiq.diplomatiqbackend.filters.signature.RequestSignatureVerificationFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -176,11 +178,15 @@ public class SecurityConfiguration {
 
             http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
+            http.addFilterAfter(new RequestCheckerFilter(objectMapper, globalExceptionHandler), LogoutFilter.class);
+            http.addFilterAfter(new ClockDiscrepancyFilter(objectMapper, globalExceptionHandler),
+                RequestCheckerFilter.class);
+
             RequestMatcher authFiltersRequestMatcher =
                 httpServletRequest -> !UNAUTHENTICATED_PATHS.contains(httpServletRequest.getServletPath());
-            http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher, objectMapper,
-                authenticationService, globalExceptionHandler), LogoutFilter.class);
-            http.addFilterAfter(new AuthenticationFilter(authFiltersRequestMatcher, objectMapper,
+            http.addFilterAfter(new RequestSignatureVerificationFilter(objectMapper, authFiltersRequestMatcher,
+                authenticationService, globalExceptionHandler), ClockDiscrepancyFilter.class);
+            http.addFilterAfter(new AuthenticationFilter(objectMapper, authFiltersRequestMatcher,
                     authenticationService, globalExceptionHandler),
                 RequestSignatureVerificationFilter.class);
 

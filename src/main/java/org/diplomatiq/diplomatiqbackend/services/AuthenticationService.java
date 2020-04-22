@@ -18,6 +18,7 @@ import org.diplomatiq.diplomatiqbackend.methods.entities.responses.LoginV1Respon
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
 import org.diplomatiq.diplomatiqbackend.repositories.AuthenticationSessionRepository;
+import org.diplomatiq.diplomatiqbackend.repositories.SessionRepository;
 import org.diplomatiq.diplomatiqbackend.repositories.UserDeviceRepository;
 import org.diplomatiq.diplomatiqbackend.repositories.UserIdentityRepository;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.aead.DiplomatiqAEAD;
@@ -55,6 +56,9 @@ public class AuthenticationService {
 
     @Autowired
     private AuthenticationSessionRepository authenticationSessionRepository;
+
+    @Autowired
+    private SessionRepository sessionRepository;
 
     @Autowired
     private PasswordStretchingEngine passwordStretchingEngine;
@@ -244,62 +248,36 @@ public class AuthenticationService {
         return getCurrentAuthenticatedAuthenticationToken().getCredentials();
     }
 
-    public String validateAndDecryptEncryptedSessionId(String encryptedSessionId, String deviceId) {
-        if (encryptedSessionId == null) {
-            throw new IllegalArgumentException("encryptedSessionId must not be null");
-        }
-
-        if (encryptedSessionId.equals("")) {
-            throw new IllegalArgumentException("encryptedSessionId must not be empty");
-        }
-
-        if (deviceId == null) {
-            throw new IllegalArgumentException("deviceId must not be null");
-        }
-
-        if (deviceId.equals("")) {
-            throw new IllegalArgumentException("deviceId must not be empty");
-        }
-
-        String decryptedSessionId = "decryptedSessionId";
-
-        return decryptedSessionId;
-    }
-
-    public UserIdentity getUserBySessionId(String sessionId) throws NoSuchAlgorithmException {
-        if (sessionId == null) {
-            throw new IllegalArgumentException("sessionId must not be null");
-        }
-
-        if (sessionId.equals("")) {
-            throw new IllegalArgumentException("sessionId must not be empty");
-        }
-
-        return userIdentityHelper.dummyUserIdentity(null);
-    }
-
     public byte[] getDeviceKeyByDeviceId(String deviceId) {
-        if (deviceId == null) {
-            throw new IllegalArgumentException("deviceId must not be null");
-        }
-
-        if (deviceId.equals("")) {
-            throw new IllegalArgumentException("deviceId must not be empty");
-        }
-
-        return new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
+        return userDevice.getDeviceKey();
     }
 
     public byte[] getAuthenticationSessionKeyByAuthenticationSessionId(String authenticationSessionId) {
-        if (authenticationSessionId == null) {
-            throw new IllegalArgumentException("deviceId must not be null");
+        AuthenticationSession authenticationSession =
+            authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
+        return authenticationSession.getAuthenticationSessionKey();
+    }
+
+    public UserIdentity getUserIdentityByAuthenticationSessionCredentials(String authenticationSessionId) {
+        AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
+        return authenticationSession.getUserAuthentication().getUserIdentity();
+    }
+
+    public UserIdentity getUserIdentityByDeviceCredentials(String deviceId) {
+        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
+        return userDevice.getUserIdentity();
+    }
+
+    public UserIdentity getUserIdentityBySessionCredentials(String deviceId, String sessionId) {
+        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
+        Session session = sessionRepository.findById(sessionId).orElseThrow();
+
+        if (!userDevice.getSession().equals(session)) {
+            throw new UnauthorizedException("Device and session are unrelated.");
         }
 
-        if (authenticationSessionId.equals("")) {
-            throw new IllegalArgumentException("deviceId must not be empty");
-        }
-
-        return new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        return userDevice.getUserIdentity();
     }
 
     private AuthenticationToken getCurrentAuthenticatedAuthenticationToken() {
@@ -312,6 +290,6 @@ public class AuthenticationService {
             throw new InternalServerError("SecurityContext contains something else instead of an AuthenticationToken.");
         }
 
-        return (AuthenticationToken) authentication;
+        return (AuthenticationToken)authentication;
     }
 }

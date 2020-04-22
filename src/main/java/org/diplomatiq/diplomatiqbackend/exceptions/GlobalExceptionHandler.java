@@ -1,5 +1,8 @@
 package org.diplomatiq.diplomatiqbackend.exceptions;
 
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.ClockDiscrepancyException;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.MethodNotAllowedException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
@@ -26,11 +29,34 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler({ BadRequestException.class })
+    public ResponseEntity<Object> handleBadRequestException(BadRequestException exception,
+                                                            WebRequest request) {
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.MethodNotAllowed, exception);
+        return handleDiplomatiqApiError(apiError);
+    }
+
+    @ExceptionHandler({ ClockDiscrepancyException.class })
+    public ResponseEntity<Object> handleClockDiscrepancyException(ClockDiscrepancyException exception,
+                                                                  WebRequest request) {
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.ClockDiscrepancy, exception);
+        return handleDiplomatiqApiError(apiError);
+    }
+
+    @ExceptionHandler({ MethodNotAllowedException.class })
+    public ResponseEntity<Object> handleMethodNotAllowedException(MethodNotAllowedException exception,
+                                                                  WebRequest request) {
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.MethodNotAllowed, exception);
+        return handleDiplomatiqApiError(apiError);
+    }
+
     @ExceptionHandler({ UnauthorizedException.class })
     public ResponseEntity<Object> handleUnauthorizedException(UnauthorizedException exception, WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.Unauthorized, exception,
-                null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.Unauthorized, exception);
         return handleDiplomatiqApiError(apiError);
     }
 
@@ -47,8 +73,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                          HttpHeaders headers, HttpStatus status,
                                                                          WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.MethodNotAllowed, exception,
-                null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.MethodNotAllowed, exception);
         return handleDiplomatiqApiError(apiError);
     }
 
@@ -67,8 +92,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                       HttpHeaders headers, HttpStatus status,
                                                                       WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.NotAcceptable, exception,
-                null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.NotAcceptable, exception);
         return handleDiplomatiqApiError(apiError);
     }
 

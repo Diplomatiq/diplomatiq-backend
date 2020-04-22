@@ -5,7 +5,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DiplomatiqHeaders {
-    private enum KnownHeader {
+    public enum KnownHeader {
         AuthenticationSessionId,
         Authorization,
         ClientId,
@@ -47,8 +47,6 @@ public class DiplomatiqHeaders {
             "The list of those headers split by a ; character, which are part of the request signature."
         );
     }
-
-    public static final String SignedHeadersHeaderName = KnownHeader.SignedHeaders.name();
 
     public static final Set<String> BaseHeaders = Collections.unmodifiableSet(
         Set.of(

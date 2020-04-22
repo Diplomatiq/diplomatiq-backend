@@ -3,7 +3,7 @@ package org.diplomatiq.diplomatiqbackend.filters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.filter.GenericFilterBean;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -11,11 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class JsonResponseWritingFilter extends RequestMatchingFilter {
+public abstract class JsonResponseWritingFilter extends GenericFilterBean {
     private ObjectMapper objectMapper;
 
-    public JsonResponseWritingFilter(RequestMatcher requestMatcher, ObjectMapper objectMapper) {
-        super(requestMatcher);
+    public JsonResponseWritingFilter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 

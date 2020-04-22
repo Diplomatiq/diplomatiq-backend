@@ -12,6 +12,7 @@ public final class DiplomatiqApiError {
 
     public enum DiplomatiqApiErrorCode {
         BadRequest,
+        ClockDiscrepancy,
         InternalServerError,
         MethodNotAllowed,
         NotAcceptable,

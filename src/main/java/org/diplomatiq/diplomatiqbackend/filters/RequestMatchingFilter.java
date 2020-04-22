@@ -1,7 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.filters;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.filter.GenericFilterBean;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -10,10 +10,11 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
-public abstract class RequestMatchingFilter extends GenericFilterBean {
+public abstract class RequestMatchingFilter extends JsonResponseWritingFilter {
     protected RequestMatcher requestMatcher;
 
-    public RequestMatchingFilter(RequestMatcher requestMatcher) {
+    public RequestMatchingFilter(ObjectMapper objectMapper, RequestMatcher requestMatcher) {
+        super(objectMapper);
         this.requestMatcher = requestMatcher;
     }
 

@@ -43,9 +43,6 @@ import java.security.NoSuchAlgorithmException;
 @RestController
 public class UnauthenticatedMethods {
     @Autowired
-    private UserIdentityService userIdentityService;
-
-    @Autowired
     private RegistrationService registrationService;
 
     @Autowired

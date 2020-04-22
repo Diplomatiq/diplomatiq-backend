@@ -3,9 +3,11 @@ package org.diplomatiq.diplomatiqbackend.filters.authentication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
 import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqAuthenticationScheme;
-import org.diplomatiq.diplomatiqbackend.filters.JsonResponseWritingFilter;
+import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
+import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -20,17 +22,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class AuthenticationFilter extends JsonResponseWritingFilter {
-    private static final String EncryptedSessionIdKey = "EncryptedSessionId";
-    private static final String DeviceIdKey = "DeviceId";
-
+public class AuthenticationFilter extends RequestMatchingFilter {
     private AuthenticationService authenticationService;
     private GlobalExceptionHandler globalExceptionHandler;
 
-    public AuthenticationFilter(RequestMatcher requestMatcher, ObjectMapper objectMapper,
+    public AuthenticationFilter(ObjectMapper objectMapper, RequestMatcher requestMatcher,
                                 AuthenticationService authenticationService,
                                 GlobalExceptionHandler globalExceptionHandler) {
-        super(requestMatcher, objectMapper);
+        super(objectMapper, requestMatcher);
         this.authenticationService = authenticationService;
         this.globalExceptionHandler = globalExceptionHandler;
     }
@@ -45,6 +44,10 @@ public class AuthenticationFilter extends JsonResponseWritingFilter {
             AuthenticationToken authenticationResult = attemptAuthentication(request);
             SecurityContextHolder.getContext().setAuthentication(authenticationResult);
             chain.doFilter(servletRequest, servletResponse);
+        } catch (BadRequestException ex) {
+            ResponseEntity<Object> responseEntity = globalExceptionHandler.handleBadRequestException(ex,
+                new ServletWebRequest(request));
+            writeJsonResponse(response, responseEntity);
         } catch (UnauthorizedException ex) {
             ResponseEntity<Object> responseEntity = globalExceptionHandler.handleUnauthorizedException(ex,
                 new ServletWebRequest(request));
@@ -56,25 +59,73 @@ public class AuthenticationFilter extends JsonResponseWritingFilter {
         }
     }
 
-    public AuthenticationToken attemptAuthentication(HttpServletRequest httpServletRequest) throws AuthenticationException {
-        String encryptedSessionId = httpServletRequest.getHeader(EncryptedSessionIdKey);
-        String deviceId = httpServletRequest.getHeader(DeviceIdKey);
-
-        String sessionId;
-        try {
-            sessionId = authenticationService.validateAndDecryptEncryptedSessionId(encryptedSessionId, deviceId);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not get sessionId.", ex);
+    public AuthenticationToken attemptAuthentication(HttpServletRequest request) throws AuthenticationException {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || authorizationHeader.equals("")) {
+            throw new BadRequestException("Authorization header must not be null or empty.");
         }
 
+        String[] authorizationHeaderSplit = authorizationHeader.split(" ");
+        String authenticationSchemeString = authorizationHeaderSplit[0];
+
+        DiplomatiqAuthenticationScheme authenticationScheme;
+        try {
+            authenticationScheme = DiplomatiqAuthenticationScheme.valueOf(authenticationSchemeString);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Unknown authentication scheme.", ex);
+        }
+
+        String authenticationSessionId =
+            request.getHeader(DiplomatiqHeaders.KnownHeader.AuthenticationSessionId.name());
+        String deviceId = request.getHeader(DiplomatiqHeaders.KnownHeader.DeviceId.name());
+        String sessionId = request.getHeader(DiplomatiqHeaders.KnownHeader.SessionId.name());
+
+        String authenticationId;
         UserIdentity userIdentity;
-        try {
-            userIdentity = authenticationService.getUserBySessionId(sessionId);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not get userIdentity.", ex);
+        switch (authenticationScheme) {
+            case AuthenticationSessionSignatureV1:
+                userIdentity = authenticateWithAuthenticationSessionSignatureV1(authenticationSessionId);
+                authenticationId = authenticationSessionId;
+                break;
+
+            case DeviceSignatureV1:
+                userIdentity = authenticateWithDeviceSignatureV1(deviceId);
+                authenticationId = deviceId;
+                break;
+
+            case SessionSignatureV1:
+                userIdentity = authenticateWithSessionSignatureV1(deviceId, sessionId);
+                authenticationId = sessionId;
+                break;
+
+            default:
+                throw new BadRequestException("Unknown authentication scheme.");
         }
 
-        return new AuthenticationToken(userIdentity,
-            new AuthenticationDetails(DiplomatiqAuthenticationScheme.SessionSignatureV1, sessionId));
+        return new AuthenticationToken(userIdentity, new AuthenticationDetails(authenticationScheme, authenticationId));
+    }
+
+    public UserIdentity authenticateWithAuthenticationSessionSignatureV1(String authenticationSessionId) {
+        try {
+            return authenticationService.getUserIdentityByAuthenticationSessionCredentials(authenticationSessionId);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Authentication session credentials could not be validated.", ex);
+        }
+    }
+
+    public UserIdentity authenticateWithDeviceSignatureV1(String deviceId) {
+        try {
+            return authenticationService.getUserIdentityByDeviceCredentials(deviceId);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Device credentials could not be validated.", ex);
+        }
+    }
+
+    public UserIdentity authenticateWithSessionSignatureV1(String deviceId, String sessionId) {
+        try {
+            return authenticationService.getUserIdentityBySessionCredentials(deviceId, sessionId);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Session credentials could not be validated.", ex);
+        }
     }
 }

@@ -12,4 +12,28 @@ public abstract class AbstractIdentifiableNodeEntity {
     public final String getId() {
         return id;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof AbstractIdentifiableNodeEntity)) {
+            return false;
+        }
+
+        AbstractIdentifiableNodeEntity otherAbstractIdentifiableNodeEntity = (AbstractIdentifiableNodeEntity)other;
+
+        if (id == null || otherAbstractIdentifiableNodeEntity.getId() == null) {
+            return false;
+        }
+
+        return id.equals(otherAbstractIdentifiableNodeEntity.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
 }
