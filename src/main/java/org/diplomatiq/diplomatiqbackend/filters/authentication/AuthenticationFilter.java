@@ -107,25 +107,25 @@ public class AuthenticationFilter extends RequestMatchingFilter {
 
     public UserIdentity authenticateWithAuthenticationSessionSignatureV1(String authenticationSessionId) {
         try {
-            return authenticationService.getUserIdentityByAuthenticationSessionCredentials(authenticationSessionId);
+            return authenticationService.verifyAuthenticationSessionCredentials(authenticationSessionId);
         } catch (Exception ex) {
-            throw new UnauthorizedException("Authentication session credentials could not be validated.", ex);
+            throw new UnauthorizedException("Authentication session credentials could not be verified.", ex);
         }
     }
 
     public UserIdentity authenticateWithDeviceSignatureV1(String deviceId) {
         try {
-            return authenticationService.getUserIdentityByDeviceCredentials(deviceId);
+            return authenticationService.verifyDeviceCredentials(deviceId);
         } catch (Exception ex) {
-            throw new UnauthorizedException("Device credentials could not be validated.", ex);
+            throw new UnauthorizedException("Device credentials could not be verified.", ex);
         }
     }
 
     public UserIdentity authenticateWithSessionSignatureV1(String deviceId, String sessionId) {
         try {
-            return authenticationService.getUserIdentityBySessionCredentials(deviceId, sessionId);
+            return authenticationService.verifySessionCredentials(deviceId, sessionId);
         } catch (Exception ex) {
-            throw new UnauthorizedException("Session credentials could not be validated.", ex);
+            throw new UnauthorizedException("Session credentials could not be verified.", ex);
         }
     }
 }

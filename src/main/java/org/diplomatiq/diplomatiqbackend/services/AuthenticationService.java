@@ -11,6 +11,7 @@ import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.Abstra
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.ExpiredException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.InternalServerError;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationDetails;
@@ -298,6 +299,9 @@ public class AuthenticationService {
         byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
         String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
 
+        userDevice.setSession(newSession);
+        userDeviceRepository.save(userDevice);
+
         return new GetSessionV1Response(sessionIdAeadBase64);
     }
 
@@ -320,23 +324,36 @@ public class AuthenticationService {
         return authenticationSession.getAuthenticationSessionKey();
     }
 
-    public UserIdentity getUserIdentityByAuthenticationSessionCredentials(String authenticationSessionId) {
+    @Transactional(noRollbackFor = { ExpiredException.class })
+    public UserIdentity verifyAuthenticationSessionCredentials(String authenticationSessionId) {
         AuthenticationSession authenticationSession =
             authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
+
+        if (authenticationSession.getExpirationTime().isBefore(Instant.now())) {
+            authenticationSessionRepository.delete(authenticationSession);
+            throw new ExpiredException("Authentication session expired.");
+        }
+
         return authenticationSession.getUserAuthentication().getUserIdentity();
     }
 
-    public UserIdentity getUserIdentityByDeviceCredentials(String deviceId) {
+    public UserIdentity verifyDeviceCredentials(String deviceId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
         return userDevice.getUserIdentity();
     }
 
-    public UserIdentity getUserIdentityBySessionCredentials(String deviceId, String sessionId) {
+    @Transactional(noRollbackFor = { ExpiredException.class })
+    public UserIdentity verifySessionCredentials(String deviceId, String sessionId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
         Session session = sessionRepository.findById(sessionId).orElseThrow();
 
         if (!userDevice.getSession().equals(session)) {
             throw new UnauthorizedException("Device and session are unrelated.");
+        }
+
+        if (session.getExpirationTime().isBefore(Instant.now())) {
+            sessionRepository.delete(session);
+            throw new ExpiredException("Session expired.");
         }
 
         return userDevice.getUserIdentity();
