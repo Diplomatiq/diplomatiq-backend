@@ -103,7 +103,13 @@ public class SecurityConfiguration {
 
     @Configuration
     public static class DefaultSecurityConfiguration extends WebSecurityConfigurerAdapter {
-        private final Set<String> UNAUTHENTICATED_PATHS = Collections.unmodifiableSet(
+        private final Set<String> NO_FILTER_PATHS = Collections.unmodifiableSet(
+            Set.of(
+                "/"
+            )
+        );
+
+        private final Set<String> NO_AUTH_PATHS = Collections.unmodifiableSet(
             Set.of(
                 "/",
                 "/get-device-container-key-v1",
@@ -178,15 +184,17 @@ public class SecurityConfiguration {
 
             http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-            http.addFilterAfter(new RequestCheckerFilter(objectMapper, globalExceptionHandler), LogoutFilter.class);
-            http.addFilterAfter(new ClockDiscrepancyFilter(objectMapper, globalExceptionHandler),
+            RequestMatcher everyFilterRequestMatcher =
+                httpServletRequest -> !NO_FILTER_PATHS.contains(httpServletRequest.getServletPath());
+            http.addFilterAfter(new RequestCheckerFilter(objectMapper, everyFilterRequestMatcher, globalExceptionHandler), LogoutFilter.class);
+            http.addFilterAfter(new ClockDiscrepancyFilter(objectMapper, everyFilterRequestMatcher, globalExceptionHandler),
                 RequestCheckerFilter.class);
 
-            RequestMatcher authFiltersRequestMatcher =
-                httpServletRequest -> !UNAUTHENTICATED_PATHS.contains(httpServletRequest.getServletPath());
-            http.addFilterAfter(new RequestSignatureVerificationFilter(objectMapper, authFiltersRequestMatcher,
+            RequestMatcher authFilterRequestMatcher =
+                httpServletRequest -> !NO_AUTH_PATHS.contains(httpServletRequest.getServletPath());
+            http.addFilterAfter(new RequestSignatureVerificationFilter(objectMapper, authFilterRequestMatcher,
                 authenticationService, globalExceptionHandler), ClockDiscrepancyFilter.class);
-            http.addFilterAfter(new AuthenticationFilter(objectMapper, authFiltersRequestMatcher,
+            http.addFilterAfter(new AuthenticationFilter(objectMapper, authFilterRequestMatcher,
                     authenticationService, globalExceptionHandler),
                 RequestSignatureVerificationFilter.class);
 

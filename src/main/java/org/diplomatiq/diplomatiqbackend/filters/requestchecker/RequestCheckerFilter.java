@@ -6,8 +6,9 @@ import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.MethodNotAllowedException;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqMethods;
-import org.diplomatiq.diplomatiqbackend.filters.JsonResponseWritingFilter;
+import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingFilter;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.servlet.FilterChain;
@@ -18,17 +19,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class RequestCheckerFilter extends JsonResponseWritingFilter {
+public class RequestCheckerFilter extends RequestMatchingFilter {
     private GlobalExceptionHandler globalExceptionHandler;
 
-    public RequestCheckerFilter(ObjectMapper objectMapper, GlobalExceptionHandler globalExceptionHandler) {
-        super(objectMapper);
+    public RequestCheckerFilter(ObjectMapper objectMapper, RequestMatcher requestMatcher,
+                                GlobalExceptionHandler globalExceptionHandler) {
+        super(objectMapper, requestMatcher);
         this.globalExceptionHandler = globalExceptionHandler;
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
-                         FilterChain filterChain) throws IOException, ServletException {
+    public void doFilterIfRequestMatches(ServletRequest servletRequest, ServletResponse servletResponse,
+                                         FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest)servletRequest;
         HttpServletResponse response = (HttpServletResponse)servletResponse;
 

@@ -5,8 +5,9 @@ import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.ClockDiscrepancyException;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
-import org.diplomatiq.diplomatiqbackend.filters.JsonResponseWritingFilter;
+import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingFilter;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.servlet.FilterChain;
@@ -20,18 +21,19 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
-public class ClockDiscrepancyFilter extends JsonResponseWritingFilter {
+public class ClockDiscrepancyFilter extends RequestMatchingFilter {
     private static final Duration REQUEST_VALIDITY_DURATION = Duration.ofMinutes(1);
 
     private GlobalExceptionHandler globalExceptionHandler;
 
-    public ClockDiscrepancyFilter(ObjectMapper objectMapper, GlobalExceptionHandler globalExceptionHandler) {
-        super(objectMapper);
+    public ClockDiscrepancyFilter(ObjectMapper objectMapper, RequestMatcher requestMatcher, GlobalExceptionHandler globalExceptionHandler) {
+        super(objectMapper, requestMatcher);
         this.globalExceptionHandler = globalExceptionHandler;
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilterIfRequestMatches(ServletRequest servletRequest, ServletResponse servletResponse,
+                                         FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest)servletRequest;
         HttpServletResponse response = (HttpServletResponse)servletResponse;
 
