@@ -9,15 +9,6 @@ import java.util.*;
 public class EncryptedBytesConverter implements AttributeConverter<byte[], String> {
     private static final String DUMMY_ENCRYPTION_KEY_BASE64 = "c2VjcmV0c2VjcmV0IHNlY3JldCBzZWNyZXRzZWNyZXQ=";
 
-    private final NavigableMap<Integer, byte[]> keyByVersionMap;
-
-    EncryptedBytesConverter() {
-        NavigableMap<Integer, byte[]> keyByVersionMap = new TreeMap<>();
-        keyByVersionMap.put(1, getKeyFromEnvironmentVariableOrGetDummyKey("NEO4J_ENCRYPTION_KEY_V1"));
-
-        this.keyByVersionMap = Collections.unmodifiableNavigableMap(keyByVersionMap);
-    }
-
     @Override
     public String toGraphProperty(byte[] bytes) {
         try {
@@ -33,18 +24,25 @@ public class EncryptedBytesConverter implements AttributeConverter<byte[], Strin
     public byte[] toEntityAttribute(String s) {
         try {
             byte[] diplomatiqAEADBytes = Base64.getDecoder().decode(s);
-            for (byte[] keyCandidate : keyByVersionMap.descendingMap().values()) {
+            for (byte[] keyCandidate : getKeyByVersionMap().descendingMap().values()) {
                 DiplomatiqAEAD diplomatiqAEAD = DiplomatiqAEAD.fromBytes(diplomatiqAEADBytes, keyCandidate);
                 return diplomatiqAEAD.getPlaintext();
             }
         } catch (Throwable ex) {
-            // ignored
+            throw new GraphPropertyCryptoException("Could not decrypt graph property.", ex);
         }
 
         throw new GraphPropertyCryptoException("Could not decrypt graph property.");
     }
 
+    private NavigableMap<Integer, byte[]> getKeyByVersionMap() {
+        NavigableMap<Integer, byte[]> keyByVersionMap = new TreeMap<>();
+        keyByVersionMap.put(1, getKeyFromEnvironmentVariableOrGetDummyKey("NEO4J_ENCRYPTION_KEY_V1"));
+        return Collections.unmodifiableNavigableMap(keyByVersionMap);
+    }
+
     private byte[] getLatestKey() {
+        NavigableMap<Integer, byte[]> keyByVersionMap = getKeyByVersionMap();
         return keyByVersionMap.get(Collections.max(keyByVersionMap.keySet()));
     }
 
