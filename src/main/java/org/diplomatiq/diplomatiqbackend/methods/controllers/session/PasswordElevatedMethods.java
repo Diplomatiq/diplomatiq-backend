@@ -1,4 +1,4 @@
-package org.diplomatiq.diplomatiqbackend.methods.controllers;
+package org.diplomatiq.diplomatiqbackend.methods.controllers.session;
 
 import org.springframework.web.bind.annotation.RestController;
 

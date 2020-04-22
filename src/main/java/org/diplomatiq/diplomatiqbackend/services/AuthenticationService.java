@@ -9,20 +9,30 @@ import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.Abstra
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.LoginV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.LoginV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
+import org.diplomatiq.diplomatiqbackend.repositories.AuthenticationSessionRepository;
 import org.diplomatiq.diplomatiqbackend.repositories.UserDeviceRepository;
 import org.diplomatiq.diplomatiqbackend.repositories.UserIdentityRepository;
+import org.diplomatiq.diplomatiqbackend.utils.crypto.aead.DiplomatiqAEAD;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.srp.RequestBoundaryCrossingSRP6Server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.HashSet;
@@ -38,6 +48,9 @@ public class AuthenticationService {
 
     @Autowired
     private UserDeviceRepository userDeviceRepository;
+
+    @Autowired
+    private AuthenticationSessionRepository authenticationSessionRepository;
 
     @Autowired
     private PasswordStretchingEngine passwordStretchingEngine;
@@ -81,7 +94,7 @@ public class AuthenticationService {
         return new PasswordAuthenticationInitV1Response(serverEphemeralBase64, srpSaltBase64);
     }
 
-    public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) throws NoSuchAlgorithmException {
+    public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) {
         String emailAddress = request.getEmailAddress();
 
         byte[] serverEphemeralBytes;
@@ -115,7 +128,7 @@ public class AuthenticationService {
             .map(d -> ByteBuffer.wrap(d.getServerEphemeral()))
             .collect(Collectors.toSet());
         if (!savedServerEphemerals.contains(ByteBuffer.wrap(serverEphemeralBytes))) {
-            throw new UnauthorizedException("Previous server ephemeral value not found.", null);
+            throw new UnauthorizedException("Previous server ephemeral value not found.");
         }
 
         BigInteger serverEphemeralBigInteger = new BigInteger(serverEphemeralBytes);
@@ -153,7 +166,7 @@ public class AuthenticationService {
         }
 
         if (!clientProofVerified) {
-            throw new UnauthorizedException("Client proof could not be verified.", null);
+            throw new UnauthorizedException("Client proof could not be verified.");
         }
 
         BigInteger serverProofBigInteger;
@@ -185,6 +198,37 @@ public class AuthenticationService {
         String authenticationSessionId = authenticationSession.getId();
 
         return new PasswordAuthenticationCompleteV1Response(serverProofBase64, authenticationSessionId);
+    }
+
+    public LoginV1Response loginV1(LoginV1Request request) throws NoSuchPaddingException, InvalidKeyException,
+        NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, IOException {
+        String authenticationSessionId = request.getAuthenticationSessionId();
+        AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
+            .orElseThrow(() -> new UnauthorizedException("Did not find authentication session with the supplied ID."));
+
+        UserIdentity userIdentity = authenticationSession.getUserAuthentication().getUserIdentity();
+        Set<UserDevice> userDevices = userIdentity.getDevices();
+
+        UserDevice userDevice = userDeviceHelper.createUserDevice();
+        userDevices.add(userDevice);
+
+        userIdentityRepository.save(userIdentity);
+
+        String deviceId = userDevice.getId();
+
+        byte[] authenticationSessionKey = authenticationSession.getAuthenticationSessionKey();
+
+        byte[] deviceKey = userDevice.getDeviceKey();
+        DiplomatiqAEAD deviceKeyAead = new DiplomatiqAEAD(deviceKey);
+        byte[] deviceKeyAeadBytes = deviceKeyAead.toBytes(authenticationSessionKey);
+        String deviceKeyAeadBase64 = Base64.getEncoder().encodeToString(deviceKeyAeadBytes);
+
+        byte[] sessionToken = userDevice.getSessionToken();
+        DiplomatiqAEAD sessionTokenAead = new DiplomatiqAEAD(sessionToken);
+        byte[] sessionTokenAeadBytes = sessionTokenAead.toBytes(authenticationSessionKey);
+        String sessionTokenAeadBase64 = Base64.getEncoder().encodeToString(sessionTokenAeadBytes);
+
+        return new LoginV1Response(deviceId, deviceKeyAeadBase64, sessionTokenAeadBase64);
     }
 
     public String validateAndDecryptEncryptedSessionId(String encryptedSessionId, String deviceId) {

@@ -7,7 +7,8 @@ import javax.validation.constraints.NotBlank;
 public class PasswordAuthenticationInitV1Response {
     @Schema(
         description = "The SRP server ephemeral (B) as a Base64 string",
-        example = "cJ80BzjmLkYYRjSs0s18hhp9ksX96etDrBICJqDrZgHuXRoLkv+2JUFw2R+0UcPAK7+LQfnn4+iF1wnw3EgIBI5ZXGhEiiERtF7vqh4takgU2ZrgOKXyNxx1OzEsUpytpmsj5lEsfvgUaD9M/ipMVBPENOIbxonYafyWkUG4SmE="
+        example = "cJ80BzjmLkYYRjSs0s18hhp9ksX96etDrBICJqDrZgHuXRoLkv+2JUFw2R+0UcPAK7+LQfnn4" +
+            "+iF1wnw3EgIBI5ZXGhEiiERtF7vqh4takgU2ZrgOKXyNxx1OzEsUpytpmsj5lEsfvgUaD9M/ipMVBPENOIbxonYafyWkUG4SmE="
     )
     @NotBlank
     private String serverEphemeralBase64;

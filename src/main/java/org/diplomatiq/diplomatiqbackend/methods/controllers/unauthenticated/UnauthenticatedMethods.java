@@ -1,4 +1,4 @@
-package org.diplomatiq.diplomatiqbackend.methods.controllers;
+package org.diplomatiq.diplomatiqbackend.methods.controllers.unauthenticated;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -57,7 +57,7 @@ public class UnauthenticatedMethods {
         description = "Returns the key of the device container with the given ID."
     )
     @RequestMapping(
-        name = "getDeviceContainerKey",
+        name = "getDeviceContainerKeyV1",
         path = "get-device-container-key-v1",
         method = RequestMethod.GET,
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE

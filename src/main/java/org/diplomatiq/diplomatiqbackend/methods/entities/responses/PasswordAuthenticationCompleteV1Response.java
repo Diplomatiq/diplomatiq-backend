@@ -13,7 +13,11 @@ public class PasswordAuthenticationCompleteV1Response {
     private String serverProofBase64;
 
     @Schema(
-        description = "The ID of the authentication session as UTF-8 bytes, encrypted with the SRP session key (K), as a Base64 string (in DiplomatiqAEAD format = AES-GCM without padding, serialized to binary `[1-byte ivLength | 4-byte aadLength (big-endian) | 4-byte ciphertextLength (big-endian) | 1-byte tagLength | ivLength-byte initialization vector | aadLength-byte additional authenticated data | ciphertextLength-byte ciphertext | tagLength-byte authentication tag]`)",
+        description = "The ID of the authentication session as UTF-8 bytes, encrypted with the SRP session key (K), " +
+            "as a Base64 string (in DiplomatiqAEAD format = AES-GCM without padding, serialized to binary `[1-byte " +
+            "ivLength | 4-byte aadLength (big-endian) | 4-byte ciphertextLength (big-endian) | 1-byte tagLength | " +
+            "ivLength-byte initialization vector | aadLength-byte additional authenticated data | " +
+            "ciphertextLength-byte ciphertext | tagLength-byte authentication tag]`)",
         example = "DAAAAAAAAAAgEDdtnXdd+ZQgFJ+l0TeYcbA0aG/hNgsMSR3iDZUyHfemF6//n0ceGuNwwypOOMpr5kegP2isqfhuAocdbw=="
     )
     @NotBlank

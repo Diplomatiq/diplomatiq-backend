@@ -33,6 +33,12 @@ public final class DiplomatiqApiError {
     @JsonIgnore
     private final Throwable cause;
 
+    public DiplomatiqApiError(DiplomatiqApiErrorCode errorCode, Throwable cause) {
+        this.errorCode = Optional.ofNullable(errorCode).orElse(DiplomatiqApiErrorCode.InternalServerError);
+        this.cause = cause;
+        retryInformation = null;
+    }
+
     public DiplomatiqApiError(DiplomatiqApiErrorCode errorCode, Throwable cause, RetryInformation retryInformation) {
         this.errorCode = Optional.ofNullable(errorCode).orElse(DiplomatiqApiErrorCode.InternalServerError);
         this.cause = cause;

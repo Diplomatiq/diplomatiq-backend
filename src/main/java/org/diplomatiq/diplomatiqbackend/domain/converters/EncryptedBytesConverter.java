@@ -41,7 +41,7 @@ public class EncryptedBytesConverter implements AttributeConverter<byte[], Strin
             // ignored
         }
 
-        throw new GraphPropertyCryptoException("Could not decrypt graph property.", null);
+        throw new GraphPropertyCryptoException("Could not decrypt graph property.");
     }
 
     private byte[] getLatestKey() {

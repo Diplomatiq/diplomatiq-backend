@@ -38,7 +38,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleUnknownException(Exception exception, WebRequest request) {
         DiplomatiqApiError apiError =
             new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.InternalServerError,
-                exception, null);
+                exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -58,7 +58,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                      WebRequest request) {
         DiplomatiqApiError apiError =
             new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.UnsupportedMediaType,
-                exception, null);
+                exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -77,7 +77,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                HttpHeaders headers,
                                                                HttpStatus status, WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -86,7 +86,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                           HttpHeaders headers, HttpStatus status,
                                                                           WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -95,7 +95,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                           HttpHeaders headers, HttpStatus status,
                                                                           WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -105,7 +105,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   WebRequest request) {
         DiplomatiqApiError apiError =
             new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.InternalServerError,
-                exception, null);
+                exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -113,7 +113,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException exception, HttpHeaders headers,
                                                         HttpStatus status, WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -122,7 +122,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -132,7 +132,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   WebRequest request) {
         DiplomatiqApiError apiError =
             new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.InternalServerError,
-                exception, null);
+                exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -141,7 +141,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   HttpHeaders headers, HttpStatus status,
                                                                   WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -150,7 +150,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                      HttpHeaders headers, HttpStatus status,
                                                                      WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -159,7 +159,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                          HttpStatus status,
                                                          WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -168,7 +168,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                    HttpHeaders headers,
                                                                    HttpStatus status, WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.NotFound, exception, null);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.NotFound, exception);
         return handleDiplomatiqApiException(apiError);
     }
 
@@ -178,7 +178,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                         WebRequest request) {
         DiplomatiqApiError apiError =
             new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.InternalServerError,
-                exception, null);
+                exception);
         return handleDiplomatiqApiException(apiError);
     }
 

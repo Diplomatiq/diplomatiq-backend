@@ -1,4 +1,4 @@
-package org.diplomatiq.diplomatiqbackend.methods.controllers;
+package org.diplomatiq.diplomatiqbackend.methods.controllers.unauthenticated;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
