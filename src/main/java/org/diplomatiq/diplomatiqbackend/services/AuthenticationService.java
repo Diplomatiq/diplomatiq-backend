@@ -8,8 +8,10 @@ import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserIdentityHelp
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.InternalServerError;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.LoginV1Request;
+import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationDetails;
+import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationToken;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.LoginV1Response;
@@ -22,6 +24,8 @@ import org.diplomatiq.diplomatiqbackend.utils.crypto.aead.DiplomatiqAEAD;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.srp.RequestBoundaryCrossingSRP6Server;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -200,9 +204,10 @@ public class AuthenticationService {
         return new PasswordAuthenticationCompleteV1Response(serverProofBase64, authenticationSessionId);
     }
 
-    public LoginV1Response loginV1(LoginV1Request request) throws NoSuchPaddingException, InvalidKeyException,
-        NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, IOException {
-        String authenticationSessionId = request.getAuthenticationSessionId();
+    public LoginV1Response loginV1() throws NoSuchPaddingException, InvalidKeyException,
+        NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException,
+        IOException {
+        String authenticationSessionId = getCurrentAuthenticationDetails().getAuthenticationId();
         AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
             .orElseThrow(() -> new UnauthorizedException("Did not find authentication session with the supplied ID."));
 
@@ -229,6 +234,14 @@ public class AuthenticationService {
         String sessionTokenAeadBase64 = Base64.getEncoder().encodeToString(sessionTokenAeadBytes);
 
         return new LoginV1Response(deviceId, deviceKeyAeadBase64, sessionTokenAeadBase64);
+    }
+
+    public UserIdentity getCurrentUserIdentity() {
+        return getCurrentAuthenticatedAuthenticationToken().getPrincipal();
+    }
+
+    public AuthenticationDetails getCurrentAuthenticationDetails() {
+        return getCurrentAuthenticatedAuthenticationToken().getCredentials();
     }
 
     public String validateAndDecryptEncryptedSessionId(String encryptedSessionId, String deviceId) {
@@ -289,4 +302,16 @@ public class AuthenticationService {
         return new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     }
 
+    private AuthenticationToken getCurrentAuthenticatedAuthenticationToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new IllegalStateException("There is no authentication in the SecurityContext.");
+        }
+
+        if (!(authentication instanceof AuthenticationToken)) {
+            throw new InternalServerError("SecurityContext contains something else instead of an AuthenticationToken.");
+        }
+
+        return (AuthenticationToken) authentication;
+    }
 }

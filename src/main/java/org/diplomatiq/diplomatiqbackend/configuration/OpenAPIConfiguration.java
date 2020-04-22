@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import org.diplomatiq.diplomatiqbackend.filters.signature.DiplomatiqHeaders;
+import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

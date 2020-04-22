@@ -3,6 +3,8 @@ package org.diplomatiq.diplomatiqbackend.filters.signature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
+import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqAuthenticationScheme;
+import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
 import org.diplomatiq.diplomatiqbackend.filters.JsonResponseWritingFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.http.ResponseEntity;
@@ -29,8 +31,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RequestSignatureVerificationFilter extends JsonResponseWritingFilter {
-    private static final String SIGNED_HEADERS_HEADER_NAME = "SignedHeaders";
-
     private AuthenticationService authenticationService;
     private GlobalExceptionHandler globalExceptionHandler;
 
@@ -50,7 +50,7 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
         HttpServletResponse response = (HttpServletResponse)servletResponse;
 
         try {
-            verifySignature(wrappedRequest);
+            verifyRequestSignature(wrappedRequest);
             filterChain.doFilter(wrappedRequest, servletResponse);
         } catch (UnauthorizedException ex) {
             ResponseEntity<Object> responseEntity = globalExceptionHandler.handleUnauthorizedException(ex,
@@ -64,7 +64,7 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
 
     }
 
-    private void verifySignature(ContentCachingRequestWrapper request) throws InvalidKeyException,
+    private void verifyRequestSignature(ContentCachingRequestWrapper request) throws InvalidKeyException,
         UnauthorizedException, NoSuchAlgorithmException {
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.equals("")) {
@@ -84,16 +84,16 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
         }
 
         switch (authenticationScheme) {
-            case SignedSessionV1:
-                verifySignedSessionV1Signature(request, authenticationScheme, signatureBase64);
+            case AuthenticationSessionSignatureV1:
+                verifyAuthenticationSessionSignatureV1(request, authenticationScheme, signatureBase64);
                 break;
 
-            case SignedAuthenticationSessionV1:
-                verifySignedAuthenticationSessionV1Signature(request, authenticationScheme, signatureBase64);
+            case DeviceSignatureV1:
+                verifyDeviceSignatureV1(request, authenticationScheme, signatureBase64);
                 break;
 
-            case SignedRequestV1:
-                verifySignedRequestV1Signature(request, authenticationScheme, signatureBase64);
+            case SessionSignatureV1:
+                verifySessionSignatureV1(request, authenticationScheme, signatureBase64);
                 break;
 
             default:
@@ -101,9 +101,9 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
         }
     }
 
-    private void verifySignedSessionV1Signature(ContentCachingRequestWrapper request,
-                                                DiplomatiqAuthenticationScheme authenticationScheme,
-                                                String signatureBase64) throws NoSuchAlgorithmException,
+    private void verifySessionSignatureV1(ContentCachingRequestWrapper request,
+                                          DiplomatiqAuthenticationScheme authenticationScheme,
+                                          String signatureBase64) throws NoSuchAlgorithmException,
         InvalidKeyException {
         byte[] providedSignature;
         try {
@@ -116,13 +116,13 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
 
-        String signedHeaderNamesString = request.getHeader(SIGNED_HEADERS_HEADER_NAME);
+        String signedHeaderNamesString = request.getHeader(DiplomatiqHeaders.SignedHeadersHeaderName);
         if (signedHeaderNamesString == null || signedHeaderNamesString.equals("")) {
             throw new UnauthorizedException("SignedHeaders header must not be null or empty.");
         }
 
         Set<String> signedHeaderNames = Set.of(signedHeaderNamesString.split(";"));
-        for (String mandatoryHeaderName : DiplomatiqHeaders.SignedSessionV1SignedHeaders) {
+        for (String mandatoryHeaderName : DiplomatiqHeaders.SessionSignatureV1SignedHeaders) {
             if (!signedHeaderNames.contains(mandatoryHeaderName.toLowerCase())) {
                 throw new UnauthorizedException(String.format("Mandatory header %s is missing from SignedHeaders.",
                     mandatoryHeaderName));
@@ -168,9 +168,9 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
         }
     }
 
-    private void verifySignedAuthenticationSessionV1Signature(ContentCachingRequestWrapper request,
-                                                              DiplomatiqAuthenticationScheme authenticationScheme,
-                                                              String signatureBase64) throws NoSuchAlgorithmException,
+    private void verifyAuthenticationSessionSignatureV1(ContentCachingRequestWrapper request,
+                                                        DiplomatiqAuthenticationScheme authenticationScheme,
+                                                        String signatureBase64) throws NoSuchAlgorithmException,
         InvalidKeyException {
         byte[] providedSignature;
         try {
@@ -183,14 +183,14 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
 
-        String signedHeaderNamesString = request.getHeader("SignedHeaders");
+        String signedHeaderNamesString = request.getHeader(DiplomatiqHeaders.SignedHeadersHeaderName);
         if (signedHeaderNamesString == null || signedHeaderNamesString.equals("")) {
             throw new UnauthorizedException("SignedHeaders header must not be null or empty.");
         }
 
         Set<String> signedHeaderNames = Set.of(signedHeaderNamesString.split(";"));
         for (String mandatoryHeaderName :
-            DiplomatiqHeaders.SignedAuthenticationSessionV1SignedHeaders) {
+            DiplomatiqHeaders.AuthenticationSessionSignatureV1SignedHeaders) {
             if (!signedHeaderNames.contains(mandatoryHeaderName.toLowerCase())) {
                 throw new UnauthorizedException(String.format("Mandatory header %s is missing from SignedHeaders.",
                     mandatoryHeaderName));
@@ -237,9 +237,9 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
         }
     }
 
-    private void verifySignedRequestV1Signature(ContentCachingRequestWrapper request,
-                                                DiplomatiqAuthenticationScheme authenticationScheme,
-                                                String signatureBase64) throws NoSuchAlgorithmException,
+    private void verifyDeviceSignatureV1(ContentCachingRequestWrapper request,
+                                         DiplomatiqAuthenticationScheme authenticationScheme,
+                                         String signatureBase64) throws NoSuchAlgorithmException,
         InvalidKeyException {
         byte[] providedSignature;
         try {
@@ -252,14 +252,14 @@ public class RequestSignatureVerificationFilter extends JsonResponseWritingFilte
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
 
-        String signedHeaderNamesString = request.getHeader("SignedHeaders");
+        String signedHeaderNamesString = request.getHeader(DiplomatiqHeaders.SignedHeadersHeaderName);
         if (signedHeaderNamesString == null || signedHeaderNamesString.equals("")) {
             throw new UnauthorizedException("SignedHeaders header must not be null or empty.");
         }
 
         Set<String> signedHeaderNames = Set.of(signedHeaderNamesString.split(";"));
         for (String mandatoryHeaderName :
-            DiplomatiqHeaders.SignedRequestV1SignedHeaders) {
+            DiplomatiqHeaders.DeviceSignatureV1SignedHeaders) {
             if (!signedHeaderNames.contains(mandatoryHeaderName.toLowerCase())) {
                 throw new UnauthorizedException(String.format("Mandatory header %s is missing from SignedHeaders.",
                     mandatoryHeaderName));

@@ -2,7 +2,9 @@ package org.diplomatiq.diplomatiqbackend.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
-import org.diplomatiq.diplomatiqbackend.filters.authentication.SessionAuthenticationFilter;
+import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
+import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqMethods;
+import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationFilter;
 import org.diplomatiq.diplomatiqbackend.filters.signature.RequestSignatureVerificationFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +20,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
 
@@ -73,9 +75,9 @@ public class SecurityConfiguration {
             http.cors(cors -> {
                 CorsConfigurationSource openApiCorsConfigurationSource = httpServletRequest -> {
                     CorsConfiguration defaultCorsConfiguration = new CorsConfiguration();
-                    defaultCorsConfiguration.setAllowedOrigins(Arrays.asList("*"));
-                    defaultCorsConfiguration.setAllowedMethods(Arrays.asList("GET"));
-                    defaultCorsConfiguration.setAllowedHeaders(Arrays.asList());
+                    defaultCorsConfiguration.setAllowedOrigins(Collections.singletonList("*"));
+                    defaultCorsConfiguration.setAllowedMethods(Collections.singletonList("GET"));
+                    defaultCorsConfiguration.setAllowedHeaders(Collections.emptyList());
                     defaultCorsConfiguration.setAllowCredentials(false);
                     defaultCorsConfiguration.setMaxAge(300L);
                     return defaultCorsConfiguration;
@@ -101,9 +103,10 @@ public class SecurityConfiguration {
     public static class DefaultSecurityConfiguration extends WebSecurityConfigurerAdapter {
         private final Set<String> UNAUTHENTICATED_PATHS = Collections.unmodifiableSet(
             Set.of(
-//                "/",
-                "/get-challenge-v1",
+                "/",
                 "/get-device-container-key-v1",
+                "/password-authentication-complete-v1",
+                "/password-authentication-init-v1",
                 "/register-user-v1"
             )
         );
@@ -160,17 +163,9 @@ public class SecurityConfiguration {
             http.cors(cors -> {
                 CorsConfigurationSource defaultCorsConfigurationSource = httpServletRequest -> {
                     CorsConfiguration defaultCorsConfiguration = new CorsConfiguration();
-                    defaultCorsConfiguration.setAllowedOrigins(Arrays.asList("https://app.diplomatiq.org"));
-                    defaultCorsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT"));
-                    defaultCorsConfiguration.setAllowedHeaders(Arrays.asList(
-                        "Authorization",
-                        "ClientId",
-                        "Content-Type",
-                        "DeviceId",
-                        "EncryptedSessionId",
-                        "SignedHeaders",
-                        "Timestamp"
-                    ));
+                    defaultCorsConfiguration.setAllowedOrigins(Collections.singletonList("https://app.diplomatiq.org"));
+                    defaultCorsConfiguration.setAllowedMethods(new ArrayList<>(DiplomatiqMethods.AllowedMethods));
+                    defaultCorsConfiguration.setAllowedHeaders(new ArrayList<>(DiplomatiqHeaders.AllKnownHeaders));
                     defaultCorsConfiguration.setAllowCredentials(true);
                     defaultCorsConfiguration.setMaxAge(300L);
                     return defaultCorsConfiguration;
@@ -185,7 +180,7 @@ public class SecurityConfiguration {
                 httpServletRequest -> !UNAUTHENTICATED_PATHS.contains(httpServletRequest.getServletPath());
             http.addFilterAfter(new RequestSignatureVerificationFilter(authFiltersRequestMatcher, objectMapper,
                 authenticationService, globalExceptionHandler), LogoutFilter.class);
-            http.addFilterAfter(new SessionAuthenticationFilter(authFiltersRequestMatcher, objectMapper,
+            http.addFilterAfter(new AuthenticationFilter(authFiltersRequestMatcher, objectMapper,
                     authenticationService, globalExceptionHandler),
                 RequestSignatureVerificationFilter.class);
 

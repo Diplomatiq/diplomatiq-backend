@@ -15,7 +15,6 @@ import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthe
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.diplomatiq.diplomatiqbackend.services.RegistrationService;
-import org.diplomatiq.diplomatiqbackend.services.UserIdentityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;

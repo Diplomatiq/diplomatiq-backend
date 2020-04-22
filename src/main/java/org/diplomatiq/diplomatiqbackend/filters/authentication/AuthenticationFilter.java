@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
 import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
+import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqAuthenticationScheme;
 import org.diplomatiq.diplomatiqbackend.filters.JsonResponseWritingFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.http.ResponseEntity;
@@ -19,16 +20,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class SessionAuthenticationFilter extends JsonResponseWritingFilter {
-    private static final String ENCRYPTED_SESSION_ID_KEY = "EncryptedSessionId";
-    private static final String DEVICE_ID_KEY = "DeviceId";
+public class AuthenticationFilter extends JsonResponseWritingFilter {
+    private static final String EncryptedSessionIdKey = "EncryptedSessionId";
+    private static final String DeviceIdKey = "DeviceId";
 
     private AuthenticationService authenticationService;
     private GlobalExceptionHandler globalExceptionHandler;
 
-    public SessionAuthenticationFilter(RequestMatcher requestMatcher, ObjectMapper objectMapper,
-                                       AuthenticationService authenticationService,
-                                       GlobalExceptionHandler globalExceptionHandler) {
+    public AuthenticationFilter(RequestMatcher requestMatcher, ObjectMapper objectMapper,
+                                AuthenticationService authenticationService,
+                                GlobalExceptionHandler globalExceptionHandler) {
         super(requestMatcher, objectMapper);
         this.authenticationService = authenticationService;
         this.globalExceptionHandler = globalExceptionHandler;
@@ -41,7 +42,7 @@ public class SessionAuthenticationFilter extends JsonResponseWritingFilter {
         HttpServletResponse response = (HttpServletResponse)servletResponse;
 
         try {
-            SessionAuthenticationToken authenticationResult = attemptAuthentication(request);
+            AuthenticationToken authenticationResult = attemptAuthentication(request);
             SecurityContextHolder.getContext().setAuthentication(authenticationResult);
             chain.doFilter(servletRequest, servletResponse);
         } catch (UnauthorizedException ex) {
@@ -55,12 +56,11 @@ public class SessionAuthenticationFilter extends JsonResponseWritingFilter {
         }
     }
 
-    public SessionAuthenticationToken attemptAuthentication(HttpServletRequest httpServletRequest) throws AuthenticationException {
-        String encryptedSessionId = httpServletRequest.getHeader(ENCRYPTED_SESSION_ID_KEY);
-        String deviceId = httpServletRequest.getHeader(DEVICE_ID_KEY);
+    public AuthenticationToken attemptAuthentication(HttpServletRequest httpServletRequest) throws AuthenticationException {
+        String encryptedSessionId = httpServletRequest.getHeader(EncryptedSessionIdKey);
+        String deviceId = httpServletRequest.getHeader(DeviceIdKey);
 
         String sessionId;
-
         try {
             sessionId = authenticationService.validateAndDecryptEncryptedSessionId(encryptedSessionId, deviceId);
         } catch (Exception ex) {
@@ -68,13 +68,13 @@ public class SessionAuthenticationFilter extends JsonResponseWritingFilter {
         }
 
         UserIdentity userIdentity;
-
         try {
             userIdentity = authenticationService.getUserBySessionId(sessionId);
         } catch (Exception ex) {
             throw new UnauthorizedException("Could not get userIdentity.", ex);
         }
 
-        return new SessionAuthenticationToken(userIdentity, sessionId);
+        return new AuthenticationToken(userIdentity,
+            new AuthenticationDetails(DiplomatiqAuthenticationScheme.SessionSignatureV1, sessionId));
     }
 }

@@ -3,14 +3,14 @@ package org.diplomatiq.diplomatiqbackend.filters.authentication;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 
-public class SessionAuthenticationToken extends AbstractAuthenticationToken {
+public class AuthenticationToken extends AbstractAuthenticationToken {
     private final UserIdentity userIdentity;
-    private final String sessionId;
+    private final AuthenticationDetails authenticationDetails;
 
-    public SessionAuthenticationToken(UserIdentity userIdentity, String sessionId) {
+    public AuthenticationToken(UserIdentity userIdentity, AuthenticationDetails authenticationDetails) {
         super(null);
         this.userIdentity = userIdentity;
-        this.sessionId = sessionId;
+        this.authenticationDetails = authenticationDetails;
         setAuthenticated(true);
     }
 
@@ -20,7 +20,7 @@ public class SessionAuthenticationToken extends AbstractAuthenticationToken {
     }
 
     @Override
-    public String getCredentials() {
-        return sessionId;
+    public AuthenticationDetails getCredentials() {
+        return authenticationDetails;
     }
 }
