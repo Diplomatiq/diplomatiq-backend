@@ -66,6 +66,9 @@ public class ClockDiscrepancyFilter extends JsonResponseWritingFilter {
                 new ServletWebRequest(request)
             );
             writeJsonResponse(response, responseEntity);
+            return;
         }
+
+        filterChain.doFilter(servletRequest, servletResponse);
     }
 }

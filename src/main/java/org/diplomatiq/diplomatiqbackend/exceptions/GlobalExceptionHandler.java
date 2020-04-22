@@ -33,7 +33,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleBadRequestException(BadRequestException exception,
                                                             WebRequest request) {
         DiplomatiqApiError apiError =
-            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.MethodNotAllowed, exception);
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.BadRequest, exception);
         return handleDiplomatiqApiError(apiError);
     }
 

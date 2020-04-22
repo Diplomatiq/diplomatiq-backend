@@ -37,23 +37,33 @@ public class RequestCheckerFilter extends JsonResponseWritingFilter {
         String instantHeader = request.getHeader(DiplomatiqHeaders.KnownHeader.Instant.name());
 
         if (!DiplomatiqMethods.AllowedMethods.contains(requestMethod)) {
+            System.out.println(requestMethod);
             ResponseEntity<Object> responseEntity = globalExceptionHandler.handleMethodNotAllowedException(
                 new MethodNotAllowedException(requestMethod),
                 new ServletWebRequest(request)
             );
             writeJsonResponse(response, responseEntity);
-        } else if (clientIdHeader == null || clientIdHeader.equals("")) {
+            return;
+        }
+
+        if (clientIdHeader == null || clientIdHeader.equals("")) {
             ResponseEntity<Object> responseEntity = globalExceptionHandler.handleBadRequestException(
                 new BadRequestException("ClientId header must not be null or empty."),
                 new ServletWebRequest(request)
             );
             writeJsonResponse(response, responseEntity);
-        } else if (instantHeader == null || instantHeader.equals("")) {
+            return;
+        }
+
+        if (instantHeader == null || instantHeader.equals("")) {
             ResponseEntity<Object> responseEntity = globalExceptionHandler.handleBadRequestException(
                 new BadRequestException("Instant header must not be null or empty."),
                 new ServletWebRequest(request)
             );
             writeJsonResponse(response, responseEntity);
+            return;
         }
+
+        filterChain.doFilter(servletRequest, servletResponse);
     }
 }

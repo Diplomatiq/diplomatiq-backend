@@ -6,6 +6,7 @@ import java.util.Set;
 public class DiplomatiqMethods {
     public static final Set<String> AllowedMethods = Collections.unmodifiableSet(
         Set.of(
+            "HEAD",
             "GET",
             "POST",
             "PUT"
