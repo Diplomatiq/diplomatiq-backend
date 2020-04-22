@@ -91,11 +91,11 @@ public class DiplomatiqAEAD {
         return byteArrayOutputStream.toByteArray();
     }
 
-    public static DiplomatiqAEAD fromBytes(byte[] diplomatiqAEAD, byte[] key) throws IOException,
+    public static DiplomatiqAEAD fromBytes(byte[] diplomatiqAead, byte[] key) throws IOException,
         NoSuchPaddingException,
         NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException,
         IllegalBlockSizeException {
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(diplomatiqAEAD);
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(diplomatiqAead);
 
         int initializationVectorLength = byteArrayInputStream.read();
         int aadLength = ByteBuffer.wrap(byteArrayInputStream.readNBytes(4)).getInt();

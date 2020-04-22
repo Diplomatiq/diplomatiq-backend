@@ -1,19 +1,24 @@
 package org.diplomatiq.diplomatiqbackend.services;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
+import org.bouncycastle.util.Arrays;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.AuthenticationSessionHelper;
+import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.SessionHelper;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserDeviceHelper;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserIdentityHelper;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.InternalServerError;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationDetails;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationToken;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.GetSessionV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.GetSessionV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.LoginV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
@@ -36,9 +41,12 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Optional;
@@ -240,6 +248,59 @@ public class AuthenticationService {
         return new LoginV1Response(deviceId, deviceKeyAeadBase64, sessionTokenAeadBase64);
     }
 
+    public GetSessionV1Response getSessionV1(GetSessionV1Request request) throws NoSuchPaddingException,
+        InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, IllegalBlockSizeException,
+        InvalidAlgorithmParameterException {
+        String currentDeviceId = getCurrentAuthenticationDetails().getAuthenticationId();
+
+        UserDevice userDevice;
+        try {
+            userDevice = userDeviceRepository.findById(currentDeviceId).orElseThrow();
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Could not retrieve device key.", ex);
+        }
+
+        Session oldSession = userDevice.getSession();
+        if (oldSession != null) {
+            Instant expirationTime = oldSession.getExpirationTime();
+            Instant inOneMinute = Instant.now().plus(Duration.ofMinutes(1));
+            if (expirationTime.isAfter(inOneMinute)) {
+                byte[] sessionIdBytes = oldSession.getId().getBytes(StandardCharsets.UTF_8);
+                DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
+                byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
+                String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
+                return new GetSessionV1Response(sessionIdAeadBase64);
+            }
+        }
+
+        byte[] sessionTokenAeadBytes;
+        try {
+            sessionTokenAeadBytes = Base64.getDecoder().decode(request.getSessionTokenAeadBase64());
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Session token could not be decoded.", ex);
+        }
+
+        DiplomatiqAEAD sessionTokenAead;
+        try {
+            sessionTokenAead = DiplomatiqAEAD.fromBytes(sessionTokenAeadBytes, userDevice.getDeviceKey());
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Session token could not be decrypted.", ex);
+        }
+
+        byte[] sessionToken = sessionTokenAead.getPlaintext();
+        if (!Arrays.constantTimeAreEqual(sessionToken, userDevice.getSessionToken())) {
+            throw new UnauthorizedException("Session token and device are unrelated.");
+        }
+
+        Session newSession = SessionHelper.createSession();
+        byte[] sessionIdBytes = newSession.getId().getBytes(StandardCharsets.UTF_8);
+        DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
+        byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
+        String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
+
+        return new GetSessionV1Response(sessionIdAeadBase64);
+    }
+
     public UserIdentity getCurrentUserIdentity() {
         return getCurrentAuthenticatedAuthenticationToken().getPrincipal();
     }
@@ -260,7 +321,8 @@ public class AuthenticationService {
     }
 
     public UserIdentity getUserIdentityByAuthenticationSessionCredentials(String authenticationSessionId) {
-        AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
+        AuthenticationSession authenticationSession =
+            authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
         return authenticationSession.getUserAuthentication().getUserIdentity();
     }
 

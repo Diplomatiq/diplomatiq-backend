@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 
 public class DiplomatiqAEADTests {
     private void checkSerializationFormat(byte[] aeadBytes, boolean hasCiphertext, boolean hasAad) throws IOException {
@@ -250,20 +249,5 @@ public class DiplomatiqAEADTests {
     public void invalidKeyLength() {
         Assertions.assertThrows(IllegalArgumentException.class,
             () -> new DiplomatiqAEAD(null, null).toBytes(RandomUtils.bytes(31)), "Key length must be 256 bits.");
-    }
-
-    @Test
-    public void asd() throws NoSuchPaddingException, InvalidKeyException, NoSuchAlgorithmException,
-        IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, IOException {
-        byte[] deviceKey = RandomUtils.bytes(32);
-        byte[] sessionToken = RandomUtils.bytes(32);
-
-        byte[] authSessionKey = RandomUtils.bytes(32);
-
-        DiplomatiqAEAD deviceKeyAead = new DiplomatiqAEAD(deviceKey);
-        DiplomatiqAEAD sessionTokenAead = new DiplomatiqAEAD(sessionToken);
-
-        System.out.println(String.format("deviceKey: %s", Base64.getEncoder().encodeToString(deviceKeyAead.toBytes(authSessionKey))));
-        System.out.println(String.format("sessionToken: %s", Base64.getEncoder().encodeToString(sessionTokenAead.toBytes(authSessionKey))));
     }
 }
