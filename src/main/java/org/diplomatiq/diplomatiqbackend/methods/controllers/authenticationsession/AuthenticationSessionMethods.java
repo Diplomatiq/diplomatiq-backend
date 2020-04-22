@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.LoginV1Request;
@@ -16,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -44,6 +47,14 @@ import java.security.NoSuchAlgorithmException;
         )
     )
 })
+@SecurityRequirements({
+    @SecurityRequirement(name = "AuthenticationSessionId"),
+    @SecurityRequirement(name = "Authorization"),
+    @SecurityRequirement(name = "ClientId"),
+    @SecurityRequirement(name = "Instant"),
+    @SecurityRequirement(name = "SignedHeaders"),
+})
+@RestController
 public class AuthenticationSessionMethods {
     @Autowired
     private AuthenticationService authenticationService;

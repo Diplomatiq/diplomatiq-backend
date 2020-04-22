@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
 @Tag(name = "Non-API methods", description = "These methods are not real API methods.")
+@RestController
 public class NonApiMethods {
     @Operation(
         summary = "Redirect to www.diplomatiq.org",
