@@ -12,9 +12,6 @@ public class UserIdentity extends AbstractCreationRecordedNodeEntity {
     @Index(unique = true)
     private String emailAddress;
 
-    @Index(unique = true)
-    private String emailAddressDigestBase64;
-
     private String firstName;
 
     private String lastName;
@@ -33,14 +30,6 @@ public class UserIdentity extends AbstractCreationRecordedNodeEntity {
 
     public void setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
-    }
-
-    public String getEmailAddressDigestBase64() {
-        return emailAddressDigestBase64;
-    }
-
-    public void setEmailAddressDigestBase64(String emailAddressDigestBase64) {
-        this.emailAddressDigestBase64 = emailAddressDigestBase64;
     }
 
     public String getFirstName() {

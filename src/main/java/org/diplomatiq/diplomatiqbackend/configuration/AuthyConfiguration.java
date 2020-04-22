@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AuthyConfiguration {
-    @Value("${AUTHY_API_KEY}")
+    @Value("${AUTHY_API_KEY:authy}")
     private String AUTHY_API_KEY;
 
     @Bean

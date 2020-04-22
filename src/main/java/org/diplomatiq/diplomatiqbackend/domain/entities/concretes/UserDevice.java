@@ -6,18 +6,16 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
 
-import java.util.Set;
-
 @NodeEntity
 public class UserDevice extends AbstractCreationRecordedNodeEntity {
     @Convert(EncryptedBytesConverter.class)
     private byte[] deviceKey;
 
     @Convert(EncryptedBytesConverter.class)
-    private byte[] sessionToken;
+    private byte[] deviceContainerKey;
 
-    @Relationship(type = "STORES_DATA_IN")
-    private Set<UserDeviceContainer> userDeviceContainers;
+    @Convert(EncryptedBytesConverter.class)
+    private byte[] sessionToken;
 
     @Relationship(type = "HAS_SESSION")
     private Session session;
@@ -33,20 +31,20 @@ public class UserDevice extends AbstractCreationRecordedNodeEntity {
         this.deviceKey = deviceKey;
     }
 
+    public byte[] getDeviceContainerKey() {
+        return deviceContainerKey;
+    }
+
+    public void setDeviceContainerKey(byte[] deviceContainerKey) {
+        this.deviceContainerKey = deviceContainerKey;
+    }
+
     public byte[] getSessionToken() {
         return sessionToken;
     }
 
     public void setSessionToken(byte[] sessionToken) {
         this.sessionToken = sessionToken;
-    }
-
-    public Set<UserDeviceContainer> getUserDeviceContainers() {
-        return userDeviceContainers;
-    }
-
-    public void setUserDeviceContainers(Set<UserDeviceContainer> userDeviceContainers) {
-        this.userDeviceContainers = userDeviceContainers;
     }
 
     public Session getSession() {

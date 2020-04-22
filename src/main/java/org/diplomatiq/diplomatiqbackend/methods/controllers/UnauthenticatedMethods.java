@@ -63,12 +63,12 @@ public class UnauthenticatedMethods {
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
     )
     public byte[] getDeviceContainerKeyV1(
-        @Parameter(description = "The ID of the queried device container")
+        @Parameter(description = "The ID of the user's device")
         @NotBlank
         @RequestParam
-            String deviceContainerId
+            String deviceId
     ) {
-        return authenticationService.getDeviceContainerKeyV1(deviceContainerId);
+        return authenticationService.getDeviceContainerKeyV1(deviceId);
     }
 
     @Operation(

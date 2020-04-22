@@ -1,11 +1,9 @@
 package org.diplomatiq.diplomatiqbackend.services;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
-import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.AuthenticationSession;
-import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthentication;
-import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
-import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserTemporarySRPLoginData;
+import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.AuthenticationSessionHelper;
+import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserDeviceHelper;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserIdentityHelper;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
@@ -15,6 +13,7 @@ import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthen
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
+import org.diplomatiq.diplomatiqbackend.repositories.UserDeviceRepository;
 import org.diplomatiq.diplomatiqbackend.repositories.UserIdentityRepository;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.srp.RequestBoundaryCrossingSRP6Server;
@@ -38,13 +37,20 @@ public class AuthenticationService {
     private UserIdentityRepository userIdentityRepository;
 
     @Autowired
+    private UserDeviceRepository userDeviceRepository;
+
+    @Autowired
     private PasswordStretchingEngine passwordStretchingEngine;
 
     @Autowired
     private UserIdentityHelper userIdentityHelper;
 
-    public byte[] getDeviceContainerKeyV1(String deviceContainerKey) {
-        return new byte[]{};
+    @Autowired
+    private UserDeviceHelper userDeviceHelper;
+
+    public byte[] getDeviceContainerKeyV1(String deviceId) {
+        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElse(userDeviceHelper.createUserDevice());
+        return userDevice.getDeviceContainerKey();
     }
 
     public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) {
