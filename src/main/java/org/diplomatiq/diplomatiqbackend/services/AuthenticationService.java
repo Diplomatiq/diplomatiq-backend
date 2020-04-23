@@ -16,7 +16,6 @@ import org.diplomatiq.diplomatiqbackend.exceptions.internal.InternalServerError;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationDetails;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationToken;
-import org.diplomatiq.diplomatiqbackend.methods.descriptors.SessionLevelOfAssurance;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevateRegularSessionCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.GetSessionV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
@@ -184,13 +183,9 @@ public class AuthenticationService {
 
     public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) {
         String emailAddress = request.getEmailAddress();
-        Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailAddress(emailAddress);
-
-        boolean existingUser = userIdentityOptional.isPresent();
-        UserIdentity userIdentity = existingUser
-            ? userIdentityOptional.get()
-            : userIdentityHelper.dummyUserIdentity(null);
-
+        UserIdentity userIdentity =
+            userIdentityRepository.findByEmailAddress(emailAddress)
+                .orElseThrow(() -> new UnauthorizedException("UserIdentity not found."));
         UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
 
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
@@ -212,16 +207,14 @@ public class AuthenticationService {
         byte[] srpSaltBytes = currentAuthentication.getSrpSalt();
         String srpSaltBase64 = Base64.getEncoder().encodeToString(srpSaltBytes);
 
-        if (existingUser) {
-            Set<UserTemporarySRPData> userTemporarySRPDatas =
-                currentAuthentication.getUserTemporarySrpDatas();
+        Set<UserTemporarySRPData> userTemporarySRPDatas =
+            currentAuthentication.getUserTemporarySrpDatas();
 
-            UserTemporarySRPData userTemporarySRPData = new UserTemporarySRPData();
-            userTemporarySRPData.setServerEphemeral(serverEphemeralBytes);
-            userTemporarySRPDatas.add(userTemporarySRPData);
+        UserTemporarySRPData userTemporarySRPData = new UserTemporarySRPData();
+        userTemporarySRPData.setServerEphemeral(serverEphemeralBytes);
+        userTemporarySRPDatas.add(userTemporarySRPData);
 
-            userIdentityRepository.save(userIdentity);
-        }
+        userIdentityRepository.save(userIdentity);
 
         return new PasswordAuthenticationInitV1Response(serverEphemeralBase64, srpSaltBase64);
     }
@@ -238,8 +231,7 @@ public class AuthenticationService {
         }
 
         UserIdentity userIdentity = userIdentityRepository.findByEmailAddress(emailAddress)
-            .orElse(userIdentityHelper.dummyUserIdentity(serverEphemeralBytes));
-
+            .orElseThrow(() -> new UnauthorizedException("UserIdentity not found."));
         UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
 
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
@@ -440,8 +432,8 @@ public class AuthenticationService {
 
         String sessionId = getCurrentAuthenticationDetails().getAuthenticationId();
         Session session = sessionRepository.findById(sessionId).orElseThrow();
-        session.setLevelOfAssurance(SessionLevelOfAssurance.PasswordElevatedSession);
-        sessionRepository.save(session);
+        Session elevatedSession = SessionHelper.elevateSessionToPasswordElevated(session);
+        sessionRepository.save(elevatedSession);
     }
 
     public UserIdentity getCurrentUserIdentity() {

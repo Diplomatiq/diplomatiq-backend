@@ -1,9 +1,6 @@
 package org.diplomatiq.diplomatiqbackend.exceptions;
 
-import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
-import org.diplomatiq.diplomatiqbackend.exceptions.internal.ClockDiscrepancyException;
-import org.diplomatiq.diplomatiqbackend.exceptions.internal.MethodNotAllowedException;
-import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.*;
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
@@ -53,7 +50,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleDiplomatiqApiError(apiError);
     }
 
-    @ExceptionHandler({ UnauthorizedException.class })
+    @ExceptionHandler({ ExpiredException.class, UnauthorizedException.class })
     public ResponseEntity<Object> handleUnauthorizedException(UnauthorizedException exception, WebRequest request) {
         DiplomatiqApiError apiError =
             new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.Unauthorized, exception);

@@ -5,9 +5,12 @@ import org.diplomatiq.diplomatiqbackend.methods.descriptors.SessionLevelOfAssura
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
+import java.time.Instant;
+
 @NodeEntity
 public class Session extends AbstractExpiringNodeEntity {
     SessionLevelOfAssurance levelOfAssurance;
+    Instant levelOfAssuranceExpirationTime;
 
     @Relationship(type = "HAS_SESSION", direction = Relationship.INCOMING)
     private UserDevice userDevice;
@@ -18,6 +21,14 @@ public class Session extends AbstractExpiringNodeEntity {
 
     public void setLevelOfAssurance(SessionLevelOfAssurance levelOfAssurance) {
         this.levelOfAssurance = levelOfAssurance;
+    }
+
+    public Instant getLevelOfAssuranceExpirationTime() {
+        return levelOfAssuranceExpirationTime;
+    }
+
+    public void setLevelOfAssuranceExpirationTime(Instant levelOfAssuranceExpirationTime) {
+        this.levelOfAssuranceExpirationTime = levelOfAssuranceExpirationTime;
     }
 
     public UserDevice getUserDevice() {

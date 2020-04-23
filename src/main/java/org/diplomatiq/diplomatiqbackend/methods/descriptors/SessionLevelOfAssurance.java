@@ -5,9 +5,13 @@ public enum SessionLevelOfAssurance {
     PasswordElevatedSession(2),
     MultiFactorElevatedSession(3);
 
-    public final int assuranceLevel;
+    private final int numericAssuranceLevel;
 
-    private SessionLevelOfAssurance(int assuranceLevel) {
-        this.assuranceLevel = assuranceLevel;
+    SessionLevelOfAssurance(int numericAssuranceLevel) {
+        this.numericAssuranceLevel = numericAssuranceLevel;
+    }
+
+    public int getNumericAssuranceLevel() {
+        return numericAssuranceLevel;
     }
 }
