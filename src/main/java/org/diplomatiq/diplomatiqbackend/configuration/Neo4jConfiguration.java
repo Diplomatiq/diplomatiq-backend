@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableNeo4jRepositories("org.diplomatiq.diplomatiqbackend.repositories")
 @EnableTransactionManagement
 public class Neo4jConfiguration {
-
     @Value("${NEO4J_URI:bolt://localhost:7687}")
     private String uri;
 
@@ -36,6 +35,7 @@ public class Neo4jConfiguration {
             .uri(uri)
             .database(database)
             .credentials(username, password)
+            .autoIndex("update")
             .build();
     }
 
@@ -43,5 +43,4 @@ public class Neo4jConfiguration {
     public Neo4jTransactionManager transactionManager() {
         return new Neo4jTransactionManager(sessionFactory());
     }
-
 }
