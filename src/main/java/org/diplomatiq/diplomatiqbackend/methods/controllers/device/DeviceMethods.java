@@ -30,7 +30,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 @Tag(name = "Device methods", description = "These methods are available with a logged-in device. Requests must be " +
-    "authenticated and signed according to the `SignedRequestV1` authentication scheme.")
+    "authenticated and signed according to the `DeviceSignatureV1` authentication scheme.")
 @ApiResponses({
     @ApiResponse(
         responseCode = "200",

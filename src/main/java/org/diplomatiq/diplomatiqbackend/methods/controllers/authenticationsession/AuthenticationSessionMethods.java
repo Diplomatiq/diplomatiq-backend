@@ -26,7 +26,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 @Tag(name = "Authentication session methods", description = "These methods are available with an authentication " +
-    "session. Requests must be authenticated and signed according to the `SignedAuthenticationSessionV1` " +
+    "session. Requests must be authenticated and signed according to the `AuthenticationSessionSignatureV1` " +
     "authentication scheme.")
 @ApiResponses({
     @ApiResponse(

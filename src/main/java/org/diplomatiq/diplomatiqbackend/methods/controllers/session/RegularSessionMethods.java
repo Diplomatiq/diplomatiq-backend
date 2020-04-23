@@ -24,7 +24,7 @@ import javax.validation.Valid;
 
 @Tag(name = "Session methods - RegularSession", description = "These methods are available with a valid session, with" +
     "at least `RegularSession` assurance level (the lowest authentication assurance level). Requests must be " +
-    "authenticated and signed according to the `SignedRequestV1` authentication scheme.")
+    "authenticated and signed according to the `SessionSignatureV1` authentication scheme.")
 @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -54,7 +54,7 @@ public class RegularSessionMethods {
     private AuthenticationService authenticationService;
 
     @Operation(
-        summary = "Initiate session elevation to `PasswordElevated` assurance level",
+        summary = "Initiate session elevation to PasswordElevated assurance level",
         description = "Initiates the authentication flow for the current user, based on the Secure Remote Password " +
             "protocol (version 6a)."
     )
@@ -69,7 +69,7 @@ public class RegularSessionMethods {
     }
 
     @Operation(
-        summary = "Complete session elevation to `PasswordElevated` assurance level",
+        summary = "Complete session elevation to PasswordElevated assurance level",
         description = "Completes an authentication flow for the given email address, based on the Secure Remote " +
             "Password protocol (version 6a). If successful, the current session was elevated to `PasswordElevated` " +
             "assurance level."
