@@ -305,6 +305,18 @@ public class AuthenticationService {
         return new GetSessionV1Response(sessionIdAeadBase64);
     }
 
+    public void logoutV1() {
+        String sessionId = getCurrentAuthenticationDetails().getAuthenticationId();
+
+        Session session = sessionRepository.findById(sessionId).orElseThrow();
+        UserDevice userDevice = session.getUserDevice();
+
+        sessionRepository.delete(session);
+        userDeviceRepository.delete(userDevice);
+
+        SecurityContextHolder.clearContext();
+    }
+
     public UserIdentity getCurrentUserIdentity() {
         return getCurrentAuthenticatedAuthenticationToken().getPrincipal();
     }
