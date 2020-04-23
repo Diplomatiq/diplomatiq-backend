@@ -85,7 +85,7 @@ public class UnauthenticatedMethods {
         @Valid
         @RequestBody
             PasswordAuthenticationCompleteV1Request request
-    ) throws NoSuchAlgorithmException {
+    ) {
         return authenticationService.passwordAuthenticationCompleteV1(request);
     }
 

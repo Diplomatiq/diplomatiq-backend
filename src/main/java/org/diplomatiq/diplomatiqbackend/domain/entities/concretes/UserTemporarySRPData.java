@@ -1,9 +1,12 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
+import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedBytesConverter;
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractCreationRecordedNodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.typeconversion.Convert;
 
-public class UserTemporarySRPLoginData extends AbstractCreationRecordedNodeEntity {
+public class UserTemporarySRPData extends AbstractCreationRecordedNodeEntity {
+    @Convert(EncryptedBytesConverter.class)
     private byte[] serverEphemeral;
 
     @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_SRP_DATA", direction = Relationship.INCOMING)

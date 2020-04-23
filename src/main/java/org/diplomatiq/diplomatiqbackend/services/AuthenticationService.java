@@ -16,13 +16,12 @@ import org.diplomatiq.diplomatiqbackend.exceptions.internal.InternalServerError;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationDetails;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationToken;
+import org.diplomatiq.diplomatiqbackend.methods.descriptors.SessionLevelOfAssurance;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevateRegularSessionCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.GetSessionV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.responses.GetSessionV1Response;
-import org.diplomatiq.diplomatiqbackend.methods.entities.responses.LoginV1Response;
-import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
-import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.*;
 import org.diplomatiq.diplomatiqbackend.repositories.AuthenticationSessionRepository;
 import org.diplomatiq.diplomatiqbackend.repositories.SessionRepository;
 import org.diplomatiq.diplomatiqbackend.repositories.UserDeviceRepository;
@@ -83,10 +82,114 @@ public class AuthenticationService {
         return userDevice.getDeviceContainerKey();
     }
 
+    public GetSessionV1Response getSessionV1(GetSessionV1Request request) throws NoSuchPaddingException,
+        InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, IllegalBlockSizeException,
+        InvalidAlgorithmParameterException {
+        String currentDeviceId = getCurrentAuthenticationDetails().getAuthenticationId();
+
+        UserDevice userDevice;
+        try {
+            userDevice = userDeviceRepository.findById(currentDeviceId).orElseThrow();
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Could not retrieve device key.", ex);
+        }
+
+        Session oldSession = userDevice.getSession();
+        if (oldSession != null) {
+            Instant expirationTime = oldSession.getExpirationTime();
+            Instant inOneMinute = Instant.now().plus(Duration.ofMinutes(1));
+            if (expirationTime.isAfter(inOneMinute)) {
+                byte[] sessionIdBytes = oldSession.getId().getBytes(StandardCharsets.UTF_8);
+                DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
+                byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
+                String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
+                return new GetSessionV1Response(sessionIdAeadBase64);
+            }
+        }
+
+        byte[] sessionTokenAeadBytes;
+        try {
+            sessionTokenAeadBytes = Base64.getDecoder().decode(request.getSessionTokenAeadBase64());
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Session token could not be decoded.", ex);
+        }
+
+        DiplomatiqAEAD sessionTokenAead;
+        try {
+            sessionTokenAead = DiplomatiqAEAD.fromBytes(sessionTokenAeadBytes, userDevice.getDeviceKey());
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Session token could not be decrypted.", ex);
+        }
+
+        byte[] sessionToken = sessionTokenAead.getPlaintext();
+        if (!Arrays.constantTimeAreEqual(sessionToken, userDevice.getSessionToken())) {
+            throw new UnauthorizedException("Session token and device are unrelated.");
+        }
+
+        Session newSession = SessionHelper.createSession();
+        byte[] sessionIdBytes = newSession.getId().getBytes(StandardCharsets.UTF_8);
+        DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
+        byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
+        String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
+
+        userDevice.setSession(newSession);
+        userDeviceRepository.save(userDevice);
+
+        return new GetSessionV1Response(sessionIdAeadBase64);
+    }
+
+    public LoginV1Response loginV1() throws NoSuchPaddingException, InvalidKeyException,
+        NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException,
+        IOException {
+        String authenticationSessionId = getCurrentAuthenticationDetails().getAuthenticationId();
+        AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
+            .orElseThrow(() -> new UnauthorizedException("Did not find authentication session with the supplied ID."));
+
+        UserIdentity userIdentity = authenticationSession.getUserAuthentication().getUserIdentity();
+        Set<UserDevice> userDevices = userIdentity.getDevices();
+
+        UserDevice userDevice = userDeviceHelper.createUserDevice();
+        userDevices.add(userDevice);
+
+        userIdentityRepository.save(userIdentity);
+
+        String deviceId = userDevice.getId();
+
+        byte[] authenticationSessionKey = authenticationSession.getAuthenticationSessionKey();
+
+        byte[] deviceKey = userDevice.getDeviceKey();
+        DiplomatiqAEAD deviceKeyAead = new DiplomatiqAEAD(deviceKey);
+        byte[] deviceKeyAeadBytes = deviceKeyAead.toBytes(authenticationSessionKey);
+        String deviceKeyAeadBase64 = Base64.getEncoder().encodeToString(deviceKeyAeadBytes);
+
+        byte[] sessionToken = userDevice.getSessionToken();
+        DiplomatiqAEAD sessionTokenAead = new DiplomatiqAEAD(sessionToken);
+        byte[] sessionTokenAeadBytes = sessionTokenAead.toBytes(authenticationSessionKey);
+        String sessionTokenAeadBase64 = Base64.getEncoder().encodeToString(sessionTokenAeadBytes);
+
+        return new LoginV1Response(deviceId, deviceKeyAeadBase64, sessionTokenAeadBase64);
+    }
+
+    public void logoutV1() {
+        String sessionId = getCurrentAuthenticationDetails().getAuthenticationId();
+
+        Session session = sessionRepository.findById(sessionId).orElseThrow();
+        UserDevice userDevice = session.getUserDevice();
+
+        sessionRepository.delete(session);
+        userDeviceRepository.delete(userDevice);
+
+        SecurityContextHolder.clearContext();
+    }
+
     public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) {
         String emailAddress = request.getEmailAddress();
-        UserIdentity userIdentity = userIdentityRepository.findByEmailAddress(emailAddress)
-            .orElse(userIdentityHelper.dummyUserIdentity(null));
+        Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailAddress(emailAddress);
+
+        boolean existingUser = userIdentityOptional.isPresent();
+        UserIdentity userIdentity = existingUser
+            ? userIdentityOptional.get()
+            : userIdentityHelper.dummyUserIdentity(null);
 
         UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
 
@@ -103,10 +206,22 @@ public class AuthenticationService {
             RandomUtils.getStrongSecureRandom());
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
-        String serverEphemeralBase64 = Base64.getEncoder().encodeToString(serverEphemeralBigInteger.toByteArray());
+        byte[] serverEphemeralBytes = serverEphemeralBigInteger.toByteArray();
+        String serverEphemeralBase64 = Base64.getEncoder().encodeToString(serverEphemeralBytes);
 
         byte[] srpSaltBytes = currentAuthentication.getSrpSalt();
         String srpSaltBase64 = Base64.getEncoder().encodeToString(srpSaltBytes);
+
+        if (existingUser) {
+            Set<UserTemporarySRPData> userTemporarySRPDatas =
+                currentAuthentication.getUserTemporarySrpDatas();
+
+            UserTemporarySRPData userTemporarySRPData = new UserTemporarySRPData();
+            userTemporarySRPData.setServerEphemeral(serverEphemeralBytes);
+            userTemporarySRPDatas.add(userTemporarySRPData);
+
+            userIdentityRepository.save(userIdentity);
+        }
 
         return new PasswordAuthenticationInitV1Response(serverEphemeralBase64, srpSaltBase64);
     }
@@ -139,9 +254,9 @@ public class AuthenticationService {
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, abstractPasswordStretchingAlgorithmImpl,
             RandomUtils.getStrongSecureRandom());
 
-        Set<UserTemporarySRPLoginData> userTemporarySrpLoginData =
-            currentAuthentication.getUserTemporarySrpLoginDatas();
-        Set<ByteBuffer> savedServerEphemerals = userTemporarySrpLoginData.stream()
+        Set<UserTemporarySRPData> userTemporarySrpData =
+            currentAuthentication.getUserTemporarySrpDatas();
+        Set<ByteBuffer> savedServerEphemerals = userTemporarySrpData.stream()
             .map(d -> ByteBuffer.wrap(d.getServerEphemeral()))
             .collect(Collectors.toSet());
         if (!savedServerEphemerals.contains(ByteBuffer.wrap(serverEphemeralBytes))) {
@@ -217,104 +332,116 @@ public class AuthenticationService {
         return new PasswordAuthenticationCompleteV1Response(serverProofBase64, authenticationSessionId);
     }
 
-    public LoginV1Response loginV1() throws NoSuchPaddingException, InvalidKeyException,
-        NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException,
-        IOException {
-        String authenticationSessionId = getCurrentAuthenticationDetails().getAuthenticationId();
-        AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
-            .orElseThrow(() -> new UnauthorizedException("Did not find authentication session with the supplied ID."));
+    public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
+        UserIdentity userIdentity = getCurrentUserIdentity();
+        UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
 
-        UserIdentity userIdentity = authenticationSession.getUserAuthentication().getUserIdentity();
-        Set<UserDevice> userDevices = userIdentity.getDevices();
+        byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
+        BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
 
-        UserDevice userDevice = userDeviceHelper.createUserDevice();
-        userDevices.add(userDevice);
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm =
+            currentAuthentication.getPasswordStretchingAlgorithm();
+        AbstractPasswordStretchingAlgorithmImpl passwordStretchingAlgorithmImpl =
+            passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
+
+        RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
+        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, passwordStretchingAlgorithmImpl,
+            RandomUtils.getStrongSecureRandom());
+
+        BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
+        byte[] serverEphemeralBytes = serverEphemeralBigInteger.toByteArray();
+        String serverEphemeralBase64 = Base64.getEncoder().encodeToString(serverEphemeralBytes);
+
+        byte[] srpSaltBytes = currentAuthentication.getSrpSalt();
+        String srpSaltBase64 = Base64.getEncoder().encodeToString(srpSaltBytes);
+
+        Set<UserTemporarySRPData> userTemporarySRPDatas =
+            currentAuthentication.getUserTemporarySrpDatas();
+
+        UserTemporarySRPData userTemporarySRPData = new UserTemporarySRPData();
+        userTemporarySRPData.setServerEphemeral(serverEphemeralBytes);
+        userTemporarySRPDatas.add(userTemporarySRPData);
 
         userIdentityRepository.save(userIdentity);
 
-        String deviceId = userDevice.getId();
-
-        byte[] authenticationSessionKey = authenticationSession.getAuthenticationSessionKey();
-
-        byte[] deviceKey = userDevice.getDeviceKey();
-        DiplomatiqAEAD deviceKeyAead = new DiplomatiqAEAD(deviceKey);
-        byte[] deviceKeyAeadBytes = deviceKeyAead.toBytes(authenticationSessionKey);
-        String deviceKeyAeadBase64 = Base64.getEncoder().encodeToString(deviceKeyAeadBytes);
-
-        byte[] sessionToken = userDevice.getSessionToken();
-        DiplomatiqAEAD sessionTokenAead = new DiplomatiqAEAD(sessionToken);
-        byte[] sessionTokenAeadBytes = sessionTokenAead.toBytes(authenticationSessionKey);
-        String sessionTokenAeadBase64 = Base64.getEncoder().encodeToString(sessionTokenAeadBytes);
-
-        return new LoginV1Response(deviceId, deviceKeyAeadBase64, sessionTokenAeadBase64);
+        return new ElevateRegularSessionInitV1Response(serverEphemeralBase64, srpSaltBase64);
     }
 
-    public GetSessionV1Response getSessionV1(GetSessionV1Request request) throws NoSuchPaddingException,
-        InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, IllegalBlockSizeException,
-        InvalidAlgorithmParameterException {
-        String currentDeviceId = getCurrentAuthenticationDetails().getAuthenticationId();
+    public void elevateRegularSessionCompleteV1(ElevateRegularSessionCompleteV1Request request) {
+        UserIdentity userIdentity = getCurrentUserIdentity();
+        UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
 
-        UserDevice userDevice;
+        byte[] serverEphemeralBytes;
         try {
-            userDevice = userDeviceRepository.findById(currentDeviceId).orElseThrow();
+            String serverEphemeralBase64 = request.getServerEphemeralBase64();
+            serverEphemeralBytes = Base64.getDecoder().decode(serverEphemeralBase64);
         } catch (Exception ex) {
-            throw new UnauthorizedException("Could not retrieve device key.", ex);
+            throw new UnauthorizedException("Could not decode server ephemeral.", ex);
         }
 
-        Session oldSession = userDevice.getSession();
-        if (oldSession != null) {
-            Instant expirationTime = oldSession.getExpirationTime();
-            Instant inOneMinute = Instant.now().plus(Duration.ofMinutes(1));
-            if (expirationTime.isAfter(inOneMinute)) {
-                byte[] sessionIdBytes = oldSession.getId().getBytes(StandardCharsets.UTF_8);
-                DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
-                byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
-                String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
-                return new GetSessionV1Response(sessionIdAeadBase64);
-            }
+        byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
+        BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
+
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm =
+            currentAuthentication.getPasswordStretchingAlgorithm();
+        AbstractPasswordStretchingAlgorithmImpl abstractPasswordStretchingAlgorithmImpl =
+            passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
+
+        RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
+        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, abstractPasswordStretchingAlgorithmImpl,
+            RandomUtils.getStrongSecureRandom());
+
+        Set<UserTemporarySRPData> userTemporarySrpData =
+            currentAuthentication.getUserTemporarySrpDatas();
+        Set<ByteBuffer> savedServerEphemerals = userTemporarySrpData.stream()
+            .map(d -> ByteBuffer.wrap(d.getServerEphemeral()))
+            .collect(Collectors.toSet());
+        if (!savedServerEphemerals.contains(ByteBuffer.wrap(serverEphemeralBytes))) {
+            throw new UnauthorizedException("Previous server ephemeral value not found.");
         }
 
-        byte[] sessionTokenAeadBytes;
+        BigInteger serverEphemeralBigInteger = new BigInteger(serverEphemeralBytes);
+        srp.setB(serverEphemeralBigInteger);
+
+        BigInteger clientEphemeralBigInteger;
         try {
-            sessionTokenAeadBytes = Base64.getDecoder().decode(request.getSessionTokenAeadBase64());
-        } catch (IllegalArgumentException ex) {
-            throw new BadRequestException("Session token could not be decoded.", ex);
-        }
-
-        DiplomatiqAEAD sessionTokenAead;
-        try {
-            sessionTokenAead = DiplomatiqAEAD.fromBytes(sessionTokenAeadBytes, userDevice.getDeviceKey());
+            String clientEphemeralBase64 = request.getClientEphemeralBase64();
+            byte[] clientEphemeralBytes = Base64.getDecoder().decode(clientEphemeralBase64);
+            clientEphemeralBigInteger = new BigInteger(clientEphemeralBytes);
         } catch (Exception ex) {
-            throw new UnauthorizedException("Session token could not be decrypted.", ex);
+            throw new UnauthorizedException("Could not decode client ephemeral.", ex);
         }
 
-        byte[] sessionToken = sessionTokenAead.getPlaintext();
-        if (!Arrays.constantTimeAreEqual(sessionToken, userDevice.getSessionToken())) {
-            throw new UnauthorizedException("Session token and device are unrelated.");
+        try {
+            srp.calculateSecret(clientEphemeralBigInteger);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("SRP secret could not be calculated.", ex);
         }
 
-        Session newSession = SessionHelper.createSession();
-        byte[] sessionIdBytes = newSession.getId().getBytes(StandardCharsets.UTF_8);
-        DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
-        byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
-        String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
+        BigInteger clientProofBigInteger;
+        try {
+            String clientProofBase64 = request.getClientProofBase64();
+            byte[] clientProofBytes = Base64.getDecoder().decode(clientProofBase64);
+            clientProofBigInteger = new BigInteger(clientProofBytes);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Could not decode client proof.", ex);
+        }
 
-        userDevice.setSession(newSession);
-        userDeviceRepository.save(userDevice);
+        boolean clientProofVerified;
+        try {
+            clientProofVerified = srp.verifyClientEvidenceMessage(clientProofBigInteger);
+        } catch (Exception ex) {
+            throw new UnauthorizedException("Crypto error during client proof verification.", ex);
+        }
 
-        return new GetSessionV1Response(sessionIdAeadBase64);
-    }
+        if (!clientProofVerified) {
+            throw new UnauthorizedException("Client proof could not be verified.");
+        }
 
-    public void logoutV1() {
         String sessionId = getCurrentAuthenticationDetails().getAuthenticationId();
-
         Session session = sessionRepository.findById(sessionId).orElseThrow();
-        UserDevice userDevice = session.getUserDevice();
-
-        sessionRepository.delete(session);
-        userDeviceRepository.delete(userDevice);
-
-        SecurityContextHolder.clearContext();
+        session.setLevelOfAssurance(SessionLevelOfAssurance.PasswordElevatedSession);
+        sessionRepository.save(session);
     }
 
     public UserIdentity getCurrentUserIdentity() {

@@ -22,7 +22,7 @@ public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
 
     @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_SRP_DATA")
-    private Set<UserTemporarySRPLoginData> userTemporarySrpLoginDatas;
+    private Set<UserTemporarySRPData> userTemporarySrpDatas;
 
     @Relationship(type = "HAS_AUTHENTICATION_SESSION")
     private Set<AuthenticationSession> authenticationSessions;
@@ -62,12 +62,12 @@ public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
         this.passwordStretchingAlgorithm = passwordStretchingAlgorithm;
     }
 
-    public Set<UserTemporarySRPLoginData> getUserTemporarySrpLoginDatas() {
-        return userTemporarySrpLoginDatas;
+    public Set<UserTemporarySRPData> getUserTemporarySrpDatas() {
+        return userTemporarySrpDatas;
     }
 
-    public void setUserTemporarySrpLoginDatas(Set<UserTemporarySRPLoginData> userTemporarySrpLoginDatas) {
-        this.userTemporarySrpLoginDatas = userTemporarySrpLoginDatas;
+    public void setUserTemporarySrpDatas(Set<UserTemporarySRPData> userTemporarySrpDatas) {
+        this.userTemporarySrpDatas = userTemporarySrpDatas;
     }
 
     public Set<AuthenticationSession> getAuthenticationSessions() {
