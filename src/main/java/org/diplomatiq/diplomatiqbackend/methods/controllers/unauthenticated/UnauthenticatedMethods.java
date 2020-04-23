@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
-import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
 
 @Tag(name = "Unauthenticated methods", description = "These methods are available without authentication and request " +
     "signing.")
@@ -124,7 +124,7 @@ public class UnauthenticatedMethods {
         @Parameter(description = "The request body as a `RegisterUserV1Request` object")
         @Valid
         @RequestBody
-            RegisterUserV1Request request) throws NoSuchAlgorithmException {
+            RegisterUserV1Request request) throws IOException {
         registrationService.registerUser(request);
     }
 
@@ -138,7 +138,7 @@ public class UnauthenticatedMethods {
         method = RequestMethod.GET
     )
     public void validateEmailAddressV1(
-        @Parameter(description = "The ID of the user's device")
+        @Parameter(description = "The email validation key the user received in email")
         @NotBlank
         @RequestParam
             String emailValidationKey

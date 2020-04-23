@@ -4,6 +4,7 @@ import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthentica
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserAuthenticationHelper;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserIdentityHelper;
+import org.diplomatiq.diplomatiqbackend.engines.mail.EmailSendingEngine;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.RegisterUserV1Request;
 import org.diplomatiq.diplomatiqbackend.repositories.UserIdentityRepository;
@@ -11,13 +12,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
 import java.util.Base64;
 import java.util.Set;
 
 @Service
 @Transactional
 public class RegistrationService {
+    @Autowired
+    private EmailSendingEngine emailSendingEngine;
+
     @Autowired
     private UserIdentityRepository userIdentityRepository;
 
@@ -27,7 +31,7 @@ public class RegistrationService {
     @Autowired
     private UserAuthenticationHelper userAuthenticationHelper;
 
-    public void registerUser(RegisterUserV1Request request) throws NoSuchAlgorithmException {
+    public void registerUser(RegisterUserV1Request request) throws IOException {
         byte[] srpSalt;
         try {
             srpSalt = Base64.getDecoder().decode(request.getSrpSaltBase64());
@@ -51,5 +55,7 @@ public class RegistrationService {
 
         userIdentity.setAuthentications(Set.of(userAuthentication));
         userIdentityRepository.save(userIdentity);
+
+        emailSendingEngine.sendEmailAddressValidationEmail(userIdentity);
     }
 }
