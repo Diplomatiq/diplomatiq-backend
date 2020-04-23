@@ -436,6 +436,15 @@ public class AuthenticationService {
         sessionRepository.save(elevatedSession);
     }
 
+    public void validateEmailAddressV1(String emailValidationKey) {
+        Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailValidationKey(emailValidationKey);
+        if (userIdentityOptional.isPresent()) {
+            UserIdentity userIdentity = userIdentityOptional.get();
+            userIdentity.setEmailValidated(true);
+            userIdentityRepository.save(userIdentity);
+        }
+    }
+
     public UserIdentity getCurrentUserIdentity() {
         return getCurrentAuthenticatedAuthenticationToken().getPrincipal();
     }

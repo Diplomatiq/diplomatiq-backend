@@ -128,4 +128,21 @@ public class UnauthenticatedMethods {
         registrationService.registerUser(request);
     }
 
+    @Operation(
+        summary = "Validate the email address of a user",
+        description = "Sets the corresponding user's email address to validated"
+    )
+    @RequestMapping(
+        name = "validateEmailAddressV1",
+        path = "validate-email-address-v1",
+        method = RequestMethod.GET
+    )
+    public void validateEmailAddressV1(
+        @Parameter(description = "The ID of the user's device")
+        @NotBlank
+        @RequestParam
+            String emailValidationKey
+    ) {
+        authenticationService.validateEmailAddressV1(emailValidationKey);
+    }
 }

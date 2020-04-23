@@ -16,7 +16,10 @@ public class UserIdentity extends AbstractCreationRecordedNodeEntity {
 
     private String lastName;
 
-    private boolean validated;
+    private boolean emailValidated;
+
+    @Index(unique = true)
+    private String emailValidationKey;
 
     @Relationship(type = "AUTHENTICATES_WITH")
     private Set<UserAuthentication> authentications;
@@ -48,12 +51,20 @@ public class UserIdentity extends AbstractCreationRecordedNodeEntity {
         this.lastName = lastName;
     }
 
-    public boolean isValidated() {
-        return validated;
+    public boolean isEmailValidated() {
+        return emailValidated;
     }
 
-    public void setValidated(boolean validated) {
-        this.validated = validated;
+    public void setEmailValidated(boolean emailValidated) {
+        this.emailValidated = emailValidated;
+    }
+
+    public String getEmailValidationKey() {
+        return emailValidationKey;
+    }
+
+    public void setEmailValidationKey(String emailValidationKey) {
+        this.emailValidationKey = emailValidationKey;
     }
 
     public Set<UserAuthentication> getAuthentications() {
