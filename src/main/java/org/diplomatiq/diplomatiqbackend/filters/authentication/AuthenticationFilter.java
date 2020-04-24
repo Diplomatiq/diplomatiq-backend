@@ -102,6 +102,10 @@ public class AuthenticationFilter extends RequestMatchingFilter {
                 throw new BadRequestException("Unknown authentication scheme.");
         }
 
+        if (!userIdentity.isEmailValidated()) {
+            throw new UnauthorizedException("Email address is not validated.");
+        }
+
         return new AuthenticationToken(userIdentity, new AuthenticationDetails(authenticationScheme, authenticationId));
     }
 
