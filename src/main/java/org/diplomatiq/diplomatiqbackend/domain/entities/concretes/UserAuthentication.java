@@ -21,7 +21,7 @@ public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
 
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
 
-    @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_SRP_DATA")
+    @Relationship(type = "IS_CURRENTLY_AUTHENTICATING_WITH_SRP_DATA")
     private Set<UserTemporarySRPData> userTemporarySrpDatas;
 
     @Relationship(type = "HAS_AUTHENTICATION_SESSION")

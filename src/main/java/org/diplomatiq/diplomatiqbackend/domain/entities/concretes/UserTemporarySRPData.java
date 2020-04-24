@@ -9,7 +9,7 @@ public class UserTemporarySRPData extends AbstractCreationRecordedNodeEntity {
     @Convert(EncryptedBytesConverter.class)
     private byte[] serverEphemeral;
 
-    @Relationship(type = "IS_CURRENTLY_LOGGING_IN_WITH_SRP_DATA", direction = Relationship.INCOMING)
+    @Relationship(type = "IS_CURRENTLY_AUTHENTICATING_WITH_SRP_DATA", direction = Relationship.INCOMING)
     private UserAuthentication userAuthentication;
 
     public byte[] getServerEphemeral() {
