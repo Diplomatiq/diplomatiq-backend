@@ -11,7 +11,7 @@ import java.util.Set;
 
 @NodeEntity
 public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
-    private Long version;
+    private long version;
 
     @Convert(EncryptedBytesConverter.class)
     private byte[] srpSalt;
@@ -27,14 +27,17 @@ public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
     @Relationship(type = "HAS_AUTHENTICATION_SESSION")
     private Set<AuthenticationSession> authenticationSessions;
 
+    @Relationship(type = "HAS_RESET_REQUESTED")
+    private Set<UserAuthenticationResetRequest> userAuthenticationResetRequests;
+
     @Relationship(type = "AUTHENTICATES_WITH", direction = Relationship.INCOMING)
     private UserIdentity userIdentity;
 
-    public Long getVersion() {
+    public long getVersion() {
         return version;
     }
 
-    public void setVersion(Long version) {
+    public void setVersion(long version) {
         this.version = version;
     }
 
@@ -72,6 +75,14 @@ public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
 
     public Set<AuthenticationSession> getAuthenticationSessions() {
         return authenticationSessions;
+    }
+
+    public Set<UserAuthenticationResetRequest> getUserAuthenticationResetRequests() {
+        return userAuthenticationResetRequests;
+    }
+
+    public void setUserAuthenticationResetRequests(Set<UserAuthenticationResetRequest> userAuthenticationResetRequests) {
+        this.userAuthenticationResetRequests = userAuthenticationResetRequests;
     }
 
     public void setAuthenticationSessions(Set<AuthenticationSession> authenticationSessions) {

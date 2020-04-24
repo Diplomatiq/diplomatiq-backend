@@ -31,7 +31,7 @@ public class RegistrationService {
     @Autowired
     private UserAuthenticationHelper userAuthenticationHelper;
 
-    public void registerUser(RegisterUserV1Request request) throws IOException {
+    public void registerUserV1(RegisterUserV1Request request) throws IOException {
         byte[] srpSalt;
         try {
             srpSalt = Base64.getDecoder().decode(request.getSrpSaltBase64());
@@ -50,7 +50,7 @@ public class RegistrationService {
             request.getFirstName(), request.getLastName());
 
         UserAuthentication userAuthentication =
-            userAuthenticationHelper.createUserAuthenticationForRegistration(srpSalt, srpVerifier,
+            userAuthenticationHelper.createUserAuthentication(userIdentity, srpSalt, srpVerifier,
                 request.getPasswordStretchingAlgorithm());
 
         userIdentity.setAuthentications(Set.of(userAuthentication));

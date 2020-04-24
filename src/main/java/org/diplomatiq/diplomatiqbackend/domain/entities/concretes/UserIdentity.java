@@ -1,10 +1,10 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractCreationRecordedNodeEntity;
-import org.neo4j.ogm.annotation.*;
+import org.neo4j.ogm.annotation.Index;
+import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Relationship;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Set;
 
 @NodeEntity
@@ -81,9 +81,5 @@ public class UserIdentity extends AbstractCreationRecordedNodeEntity {
 
     public void setDevices(Set<UserDevice> devices) {
         this.devices = devices;
-    }
-
-    public UserAuthentication getCurrentAuthentication() {
-        return Collections.max(authentications, Comparator.comparingLong(UserAuthentication::getVersion));
     }
 }

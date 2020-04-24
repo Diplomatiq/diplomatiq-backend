@@ -3,28 +3,20 @@ package org.diplomatiq.diplomatiqbackend.services;
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.util.Arrays;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
-import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.AuthenticationSessionHelper;
-import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.SessionHelper;
-import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserDeviceHelper;
-import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.UserIdentityHelper;
+import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.*;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
+import org.diplomatiq.diplomatiqbackend.engines.mail.EmailSendingEngine;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.ExpiredException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.InternalServerError;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationDetails;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationToken;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevateRegularSessionCompleteV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.GetSessionV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.*;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.*;
-import org.diplomatiq.diplomatiqbackend.repositories.AuthenticationSessionRepository;
-import org.diplomatiq.diplomatiqbackend.repositories.SessionRepository;
-import org.diplomatiq.diplomatiqbackend.repositories.UserDeviceRepository;
-import org.diplomatiq.diplomatiqbackend.repositories.UserIdentityRepository;
+import org.diplomatiq.diplomatiqbackend.repositories.*;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.aead.DiplomatiqAEAD;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.srp.RequestBoundaryCrossingSRP6Server;
@@ -56,6 +48,12 @@ import java.util.stream.Collectors;
 @Transactional
 public class AuthenticationService {
     @Autowired
+    private EmailSendingEngine emailSendingEngine;
+
+    @Autowired
+    private PasswordStretchingEngine passwordStretchingEngine;
+
+    @Autowired
     private UserIdentityRepository userIdentityRepository;
 
     @Autowired
@@ -68,13 +66,19 @@ public class AuthenticationService {
     private SessionRepository sessionRepository;
 
     @Autowired
-    private PasswordStretchingEngine passwordStretchingEngine;
+    private UserAuthenticationResetRequestRepository userAuthenticationResetRequestRepository;
 
     @Autowired
     private UserIdentityHelper userIdentityHelper;
 
     @Autowired
     private UserDeviceHelper userDeviceHelper;
+
+    @Autowired
+    private UserAuthenticationResetRequestHelper userAuthenticationResetRequestHelper;
+
+    @Autowired
+    private UserAuthenticationHelper userAuthenticationHelper;
 
     public byte[] getDeviceContainerKeyV1(String deviceId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElse(userDeviceHelper.createUserDevice());
@@ -186,7 +190,7 @@ public class AuthenticationService {
         UserIdentity userIdentity =
             userIdentityRepository.findByEmailAddress(emailAddress)
                 .orElseThrow(() -> new UnauthorizedException("UserIdentity not found."));
-        UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
+        UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
 
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
         BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
@@ -232,7 +236,7 @@ public class AuthenticationService {
 
         UserIdentity userIdentity = userIdentityRepository.findByEmailAddress(emailAddress)
             .orElseThrow(() -> new UnauthorizedException("UserIdentity not found."));
-        UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
+        UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
 
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
         BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
@@ -326,7 +330,7 @@ public class AuthenticationService {
 
     public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
         UserIdentity userIdentity = getCurrentUserIdentity();
-        UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
+        UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
 
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
         BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
@@ -361,7 +365,7 @@ public class AuthenticationService {
 
     public void elevateRegularSessionCompleteV1(ElevateRegularSessionCompleteV1Request request) {
         UserIdentity userIdentity = getCurrentUserIdentity();
-        UserAuthentication currentAuthentication = userIdentity.getCurrentAuthentication();
+        UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
 
         byte[] serverEphemeralBytes;
         try {
@@ -437,11 +441,64 @@ public class AuthenticationService {
     }
 
     public void validateEmailAddressV1(String emailValidationKey) {
-        Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailValidationKey(emailValidationKey);
+        Optional<UserIdentity> userIdentityOptional =
+            userIdentityRepository.findByEmailValidationKey(emailValidationKey);
         if (userIdentityOptional.isPresent()) {
             UserIdentity userIdentity = userIdentityOptional.get();
             userIdentity.setEmailValidated(true);
             userIdentityRepository.save(userIdentity);
+        }
+    }
+
+    public void requestPasswordResetV1(String emailAddress) throws IOException {
+        Optional<UserIdentity> userIdentityOptional =
+            userIdentityRepository.findByEmailAddress(emailAddress.toLowerCase());
+        if (userIdentityOptional.isPresent()) {
+            UserIdentity userIdentity = userIdentityOptional.get();
+            UserAuthentication userAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
+            UserAuthenticationResetRequest userAuthenticationResetRequest =
+                userAuthenticationResetRequestHelper.create();
+            Set<UserAuthenticationResetRequest> userAuthenticationResetRequests =
+                userAuthentication.getUserAuthenticationResetRequests();
+            userAuthenticationResetRequests.add(userAuthenticationResetRequest);
+            userIdentityRepository.save(userIdentity);
+            emailSendingEngine.sendPasswordResetEmail(userAuthenticationResetRequest);
+        }
+    }
+
+    public void resetPasswordV1(ResetPasswordV1Request request) {
+        Optional<UserAuthenticationResetRequest> userAuthenticationResetRequestOptional =
+            userAuthenticationResetRequestRepository.findByRequestKey(request.getPasswordResetKey());
+        if (userAuthenticationResetRequestOptional.isPresent()) {
+            byte[] srpSalt;
+            try {
+                srpSalt = Base64.getDecoder().decode(request.getSrpSaltBase64());
+            } catch (Exception ex) {
+                throw new BadRequestException("SRP salt could not be decoded.", ex);
+            }
+
+            byte[] srpVerifier;
+            try {
+                srpVerifier = Base64.getDecoder().decode(request.getSrpSaltBase64());
+            } catch (Exception ex) {
+                throw new BadRequestException("SRP verifier could not be decoded.", ex);
+            }
+
+            UserAuthenticationResetRequest userAuthenticationResetRequest =
+                userAuthenticationResetRequestOptional.get();
+            if (ExpirationHelper.isExpired(userAuthenticationResetRequest)) {
+                throw new UnauthorizedException("Password reset request expired.");
+            }
+
+            UserIdentity userIdentity = userAuthenticationResetRequest.getUserAuthentication().getUserIdentity();
+            UserAuthentication userAuthentication = userAuthenticationHelper.createUserAuthentication(userIdentity,
+                srpSalt, srpVerifier, request.getPasswordStretchingAlgorithm());
+            Set<UserAuthentication> userAuthentications = userIdentity.getAuthentications();
+            userAuthentications.add(userAuthentication);
+            userIdentity.setAuthentications(userAuthentications);
+
+            userIdentityRepository.save(userIdentity);
+            userAuthenticationResetRequestRepository.delete(userAuthenticationResetRequest);
         }
     }
 

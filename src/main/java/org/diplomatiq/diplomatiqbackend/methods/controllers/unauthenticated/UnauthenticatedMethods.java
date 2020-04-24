@@ -11,6 +11,7 @@ import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.RegisterUserV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ResetPasswordV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
@@ -20,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import java.io.IOException;
 
@@ -59,7 +61,10 @@ public class UnauthenticatedMethods {
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
     )
     public byte[] getDeviceContainerKeyV1(
-        @Parameter(description = "The ID of the user's device")
+        @Parameter(
+            description = "The ID of the user's device",
+            example = "QKbIyfVHfCJ1jWAAhjwIgcFFbYcTV556"
+        )
         @NotBlank
         @RequestParam
             String deviceId
@@ -125,12 +130,55 @@ public class UnauthenticatedMethods {
         @Valid
         @RequestBody
             RegisterUserV1Request request) throws IOException {
-        registrationService.registerUser(request);
+        registrationService.registerUserV1(request);
+    }
+
+    @Operation(
+        summary = "Request a password reset",
+        description = "Sends a password reset request email to the given email address if exists. If the given email " +
+            "address does not exist, the method still returns success to avoid revealing user data."
+    )
+    @RequestMapping(
+        name = "requestPasswordResetV1",
+        path = "request-password-reset-v1",
+        method = RequestMethod.GET
+    )
+    public void requestPasswordResetV1(
+        @Parameter(
+            description = "The email address of the user requesting the password reset (will not be revealed if " +
+                "exists)",
+            example = "samsepi0l@diplomatiq.org"
+        )
+        @NotBlank
+        @Email
+        @RequestParam
+            String emailAddress) throws IOException {
+        authenticationService.requestPasswordResetV1(emailAddress);
+    }
+
+    @Operation(
+        summary = "Reset a password",
+        description = "Resets a given password by the corresponding password reset key. If the password reset key " +
+            "does not exist, the method still returns success to avoid revealing user data."
+    )
+    @RequestMapping(
+        name = "resetPasswordV1",
+        path = "reset-password-v1",
+        method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public void resetPasswordV1(
+        @Parameter(description = "The request body as a `ResetPasswordV1Request` object")
+        @Valid
+        @RequestBody
+            ResetPasswordV1Request request) {
+        authenticationService.resetPasswordV1(request);
     }
 
     @Operation(
         summary = "Validate the email address of a user",
-        description = "Sets the corresponding user's email address to validated"
+        description = "Sets the corresponding user's email address to validated. If the given email address " +
+            "validation key does not exist, the method still returns success to avoid revealing user data."
     )
     @RequestMapping(
         name = "validateEmailAddressV1",
@@ -138,7 +186,11 @@ public class UnauthenticatedMethods {
         method = RequestMethod.GET
     )
     public void validateEmailAddressV1(
-        @Parameter(description = "The email validation key the user received in email")
+        @Parameter(
+            description = "The email validation key the user received in email",
+            example =
+                "9i6ExDuo9dpvvV8djypUhQNlomvODXO0S5lRCFvxNHyiiiZTm3iT87Doj5IFDwhlSHpbiEKRPEcK0Fb4OdPRTYVmOd39gJIxE4AgI3hw6ZUcrDcz05i1jjrMEQydL819tbU6y02XgNOl4evk2oYGK1"
+        )
         @NotBlank
         @RequestParam
             String emailValidationKey

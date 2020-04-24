@@ -7,6 +7,7 @@ import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Email;
 import com.sendgrid.helpers.mail.objects.Personalization;
 import org.diplomatiq.diplomatiqbackend.configuration.SendGridConfiguration;
+import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthenticationResetRequest;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -47,6 +48,40 @@ public class EmailSendingEngine {
         mail.setFrom(FROM_EMAIL);
         mail.setReplyTo(FROM_EMAIL);
         mail.setTemplateId("d-529b51154b51430aba9d0cbefbdde393");
+        mail.addPersonalization(personalization);
+
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        SendGrid sendGrid = sendGridConfiguration.sendGridApiClient();
+        sendGrid.api(request);
+    }
+
+    public void sendPasswordResetEmail(UserAuthenticationResetRequest userAuthenticationResetRequest) throws IOException {
+        UserIdentity userIdentity = userAuthenticationResetRequest.getUserAuthentication().getUserIdentity();
+
+        Email toEmail = new Email();
+        toEmail.setEmail(userIdentity.getEmailAddress());
+        toEmail.setName(String.format("%s %s", userIdentity.getFirstName(), userIdentity.getLastName()));
+
+        Personalization personalization = new Personalization();
+        personalization.addTo(toEmail);
+
+        personalization.addDynamicTemplateData("firstName", userIdentity.getFirstName());
+        personalization.addDynamicTemplateData("lastName", userIdentity.getLastName());
+        personalization.addDynamicTemplateData("passwordResetUrl",
+            String.format(
+                "https://app.diplomatiq.org/reset-password?password-reset-key=%s",
+                userAuthenticationResetRequest.getRequestKey()
+            )
+        );
+
+        Mail mail = new Mail();
+        mail.setFrom(FROM_EMAIL);
+        mail.setReplyTo(FROM_EMAIL);
+        mail.setTemplateId("d-6f985ba956f34641a1e5f230d7d65b48");
         mail.addPersonalization(personalization);
 
         Request request = new Request();
