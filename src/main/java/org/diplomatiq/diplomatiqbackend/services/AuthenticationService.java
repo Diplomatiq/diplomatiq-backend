@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.util.Arrays;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.*;
+import org.diplomatiq.diplomatiqbackend.domain.entities.utils.ExpirationUtils;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
@@ -98,7 +99,7 @@ public class AuthenticationService {
 
         Session oldSession = userDevice.getSession();
         if (oldSession != null) {
-            if (ExpirationHelper.isExpiredIn(oldSession, Duration.ofMinutes(1))) {
+            if (ExpirationUtils.isExpiredIn(oldSession, Duration.ofMinutes(1))) {
                 byte[] sessionIdBytes = oldSession.getId().getBytes(StandardCharsets.UTF_8);
                 DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
                 byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
@@ -211,8 +212,7 @@ public class AuthenticationService {
         Set<UserTemporarySRPData> userTemporarySRPDatas =
             currentAuthentication.getUserTemporarySrpDatas();
 
-        UserTemporarySRPData userTemporarySRPData = new UserTemporarySRPData();
-        userTemporarySRPData.setServerEphemeral(serverEphemeralBytes);
+        UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralBytes);
         userTemporarySRPDatas.add(userTemporarySRPData);
 
         userIdentityRepository.save(userIdentity);
@@ -351,8 +351,7 @@ public class AuthenticationService {
         Set<UserTemporarySRPData> userTemporarySRPDatas =
             currentAuthentication.getUserTemporarySrpDatas();
 
-        UserTemporarySRPData userTemporarySRPData = new UserTemporarySRPData();
-        userTemporarySRPData.setServerEphemeral(serverEphemeralBytes);
+        UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralBytes);
         userTemporarySRPDatas.add(userTemporarySRPData);
 
         userIdentityRepository.save(userIdentity);
@@ -483,7 +482,7 @@ public class AuthenticationService {
 
             UserAuthenticationResetRequest userAuthenticationResetRequest =
                 userAuthenticationResetRequestOptional.get();
-            if (ExpirationHelper.isExpiredNow(userAuthenticationResetRequest)) {
+            if (ExpirationUtils.isExpiredNow(userAuthenticationResetRequest)) {
                 throw new UnauthorizedException("Password reset request expired.");
             }
 
@@ -523,7 +522,7 @@ public class AuthenticationService {
         AuthenticationSession authenticationSession =
             authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
 
-        if (ExpirationHelper.isExpiredNow(authenticationSession)) {
+        if (ExpirationUtils.isExpiredNow(authenticationSession)) {
             authenticationSessionRepository.delete(authenticationSession);
             throw new ExpiredException("Authentication session expired.");
         }
@@ -545,7 +544,7 @@ public class AuthenticationService {
             throw new UnauthorizedException("Device and session are unrelated.");
         }
 
-        if (ExpirationHelper.isExpiredNow(session)) {
+        if (ExpirationUtils.isExpiredNow(session)) {
             sessionRepository.delete(session);
             throw new ExpiredException("Session expired.");
         }

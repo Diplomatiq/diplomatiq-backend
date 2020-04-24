@@ -1,11 +1,11 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
 import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedBytesConverter;
-import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractCreationRecordedNodeEntity;
+import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractExpiringNodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
 
-public class UserTemporarySRPData extends AbstractCreationRecordedNodeEntity {
+public class UserTemporarySRPData extends AbstractExpiringNodeEntity {
     @Convert(EncryptedBytesConverter.class)
     private byte[] serverEphemeral;
 

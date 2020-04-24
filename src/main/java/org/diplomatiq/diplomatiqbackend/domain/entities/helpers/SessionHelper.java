@@ -1,6 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.helpers;
 
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.Session;
+import org.diplomatiq.diplomatiqbackend.domain.entities.utils.ExpirationUtils;
 import org.diplomatiq.diplomatiqbackend.methods.descriptors.SessionLevelOfAssurance;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,7 @@ public class SessionHelper {
 
     public static Session createSession() {
         Session session = new Session();
-        session.setExpirationTimeDelta(SESSION_VALIDITY);
+        ExpirationUtils.setExpirationLifeSpan(session, SESSION_VALIDITY);
         session.setLevelOfAssurance(SessionLevelOfAssurance.RegularSession);
         session.setLevelOfAssuranceExpirationTime(session.getExpirationTime());
         return session;

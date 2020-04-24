@@ -1,6 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.helpers;
 
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.AuthenticationSession;
+import org.diplomatiq.diplomatiqbackend.domain.entities.utils.ExpirationUtils;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -11,10 +12,8 @@ public class AuthenticationSessionHelper {
 
     public static AuthenticationSession createAuthenticationSessionWithKey(byte[] authenticationSessionKey) {
         AuthenticationSession authenticationSession = new AuthenticationSession();
-
-        authenticationSession.setExpirationTimeDelta(AUTHENTICATION_SESSION_VALIDITY);
+        ExpirationUtils.setExpirationLifeSpan(authenticationSession, AUTHENTICATION_SESSION_VALIDITY);
         authenticationSession.setAuthenticationSessionKey(authenticationSessionKey);
-
         return authenticationSession;
     }
 }
