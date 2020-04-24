@@ -217,7 +217,8 @@ public class AuthenticationService {
 
         userIdentityRepository.save(userIdentity);
 
-        return new PasswordAuthenticationInitV1Response(serverEphemeralBase64, srpSaltBase64);
+        return new PasswordAuthenticationInitV1Response(serverEphemeralBase64, srpSaltBase64,
+            currentAuthentication.getPasswordStretchingAlgorithm());
     }
 
     public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) {
