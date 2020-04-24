@@ -247,13 +247,14 @@ public class AuthenticationService {
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, abstractPasswordStretchingAlgorithmImpl,
             RandomUtils.getStrongSecureRandom());
 
-        Set<UserTemporarySRPData> userTemporarySrpData =
+        Set<UserTemporarySRPData> userTemporarySrpDatas =
             currentAuthentication.getUserTemporarySrpDatas();
-        Set<ByteBuffer> savedServerEphemerals = userTemporarySrpData.stream()
-            .map(d -> ByteBuffer.wrap(d.getServerEphemeral()))
-            .collect(Collectors.toSet());
-        if (!savedServerEphemerals.contains(ByteBuffer.wrap(serverEphemeralBytes))) {
-            throw new UnauthorizedException("Previous server ephemeral value not found.");
+        userTemporarySrpDatas.removeIf(ExpirationUtils::isExpiredNow);
+        boolean foundNonExpired = userTemporarySrpDatas.removeIf(d ->
+            Arrays.constantTimeAreEqual(d.getServerEphemeral(), serverEphemeralBytes));
+
+        if (!foundNonExpired) {
+            throw new UnauthorizedException("Previous, still valid server ephemeral value not found.");
         }
 
         BigInteger serverEphemeralBigInteger = new BigInteger(serverEphemeralBytes);
