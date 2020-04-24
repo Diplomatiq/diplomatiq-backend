@@ -37,7 +37,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Optional;
@@ -99,9 +98,7 @@ public class AuthenticationService {
 
         Session oldSession = userDevice.getSession();
         if (oldSession != null) {
-            Instant expirationTime = oldSession.getExpirationTime();
-            Instant inOneMinute = Instant.now().plus(Duration.ofMinutes(1));
-            if (expirationTime.isAfter(inOneMinute)) {
+            if (ExpirationHelper.isExpiredIn(oldSession, Duration.ofMinutes(1))) {
                 byte[] sessionIdBytes = oldSession.getId().getBytes(StandardCharsets.UTF_8);
                 DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
                 byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
@@ -486,7 +483,7 @@ public class AuthenticationService {
 
             UserAuthenticationResetRequest userAuthenticationResetRequest =
                 userAuthenticationResetRequestOptional.get();
-            if (ExpirationHelper.isExpired(userAuthenticationResetRequest)) {
+            if (ExpirationHelper.isExpiredNow(userAuthenticationResetRequest)) {
                 throw new UnauthorizedException("Password reset request expired.");
             }
 
@@ -526,7 +523,7 @@ public class AuthenticationService {
         AuthenticationSession authenticationSession =
             authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
 
-        if (authenticationSession.getExpirationTime().isBefore(Instant.now())) {
+        if (ExpirationHelper.isExpiredNow(authenticationSession)) {
             authenticationSessionRepository.delete(authenticationSession);
             throw new ExpiredException("Authentication session expired.");
         }
@@ -548,7 +545,7 @@ public class AuthenticationService {
             throw new UnauthorizedException("Device and session are unrelated.");
         }
 
-        if (session.getExpirationTime().isBefore(Instant.now())) {
+        if (ExpirationHelper.isExpiredNow(session)) {
             sessionRepository.delete(session);
             throw new ExpiredException("Session expired.");
         }
