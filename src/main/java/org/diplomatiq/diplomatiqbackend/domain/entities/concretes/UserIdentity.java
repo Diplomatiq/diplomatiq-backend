@@ -5,6 +5,7 @@ import org.neo4j.ogm.annotation.Index;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @NodeEntity
@@ -22,10 +23,10 @@ public class UserIdentity extends AbstractCreationRecordedNodeEntity {
     private String emailValidationKey;
 
     @Relationship(type = "AUTHENTICATES_WITH")
-    private Set<UserAuthentication> authentications;
+    private Set<UserAuthentication> authentications = new HashSet<>();
 
     @Relationship(type = "USES_DIPLOMATIQ_ON")
-    private Set<UserDevice> devices;
+    private Set<UserDevice> devices = new HashSet<>();
 
     public String getEmailAddress() {
         return emailAddress;

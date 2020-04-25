@@ -35,9 +35,8 @@ public class UserIdentityHelper {
     }
 
     public UserAuthentication getCurrentAuthentication(UserIdentity userIdentity) {
-        Set<UserAuthentication> userAuthentications =
-            Optional.ofNullable(userIdentity.getAuthentications()).orElse(Collections.emptySet());
-        return Collections.max(userAuthentications, Comparator.comparingLong(UserAuthentication::getVersion));
+        return Collections.max(userIdentity.getAuthentications(),
+            Comparator.comparingLong(UserAuthentication::getVersion));
     }
 
     public long getNextAuthenticationVersion(UserIdentity userIdentity) {

@@ -39,7 +39,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -147,10 +146,9 @@ public class AuthenticationService {
             .orElseThrow(() -> new UnauthorizedException("Did not find authentication session with the supplied ID."));
 
         UserIdentity userIdentity = authenticationSession.getUserAuthentication().getUserIdentity();
-        Set<UserDevice> userDevices = userIdentity.getDevices();
 
         UserDevice userDevice = userDeviceHelper.createUserDevice();
-        userDevices.add(userDevice);
+        userIdentity.getDevices().add(userDevice);
 
         userIdentityRepository.save(userIdentity);
 
@@ -217,11 +215,8 @@ public class AuthenticationService {
         byte[] srpSaltBytes = currentAuthentication.getSrpSalt();
         String srpSaltBase64 = Base64.getEncoder().encodeToString(srpSaltBytes);
 
-        Set<UserTemporarySRPData> userTemporarySRPDatas =
-            currentAuthentication.getUserTemporarySrpDatas();
-
         UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralBytes);
-        userTemporarySRPDatas.add(userTemporarySRPData);
+        currentAuthentication.getUserTemporarySrpDatas().add(userTemporarySRPData);
 
         if (existingUser) {
             userIdentityRepository.save(userIdentity);
@@ -256,8 +251,7 @@ public class AuthenticationService {
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
-        Set<UserTemporarySRPData> userTemporarySrpDatas =
-            currentAuthentication.getUserTemporarySrpDatas();
+        Set<UserTemporarySRPData> userTemporarySrpDatas = currentAuthentication.getUserTemporarySrpDatas();
         userTemporarySrpDatas.removeIf(ExpirationUtils::isExpiredNow);
         boolean foundNonExpired = userTemporarySrpDatas.removeIf(d ->
             Arrays.constantTimeAreEqual(d.getServerEphemeral(), serverEphemeralBytes));
@@ -321,11 +315,7 @@ public class AuthenticationService {
         byte[] authenticationSessionKeyBytes = authenticationSessionKeyBigInteger.toByteArray();
         AuthenticationSession authenticationSession =
             AuthenticationSessionHelper.createAuthenticationSessionWithKey(authenticationSessionKeyBytes);
-
-        Set<AuthenticationSession> authenticationSessions =
-            Optional.ofNullable(currentAuthentication.getAuthenticationSessions()).orElse(new HashSet<>());
-        authenticationSessions.add(authenticationSession);
-        currentAuthentication.setAuthenticationSessions(authenticationSessions);
+        currentAuthentication.getAuthenticationSessions().add(authenticationSession);
 
         userIdentityRepository.save(userIdentity);
 
@@ -353,11 +343,8 @@ public class AuthenticationService {
         byte[] srpSaltBytes = currentAuthentication.getSrpSalt();
         String srpSaltBase64 = Base64.getEncoder().encodeToString(srpSaltBytes);
 
-        Set<UserTemporarySRPData> userTemporarySRPDatas =
-            currentAuthentication.getUserTemporarySrpDatas();
-
         UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralBytes);
-        userTemporarySRPDatas.add(userTemporarySRPData);
+        currentAuthentication.getUserTemporarySrpDatas().add(userTemporarySRPData);
 
         userIdentityRepository.save(userIdentity);
 
@@ -383,9 +370,7 @@ public class AuthenticationService {
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
-        Set<UserTemporarySRPData> userTemporarySrpData =
-            currentAuthentication.getUserTemporarySrpDatas();
-        Set<ByteBuffer> savedServerEphemerals = userTemporarySrpData.stream()
+        Set<ByteBuffer> savedServerEphemerals = currentAuthentication.getUserTemporarySrpDatas().stream()
             .map(d -> ByteBuffer.wrap(d.getServerEphemeral()))
             .collect(Collectors.toSet());
         if (!savedServerEphemerals.contains(ByteBuffer.wrap(serverEphemeralBytes))) {
@@ -454,9 +439,7 @@ public class AuthenticationService {
             UserAuthentication userAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
             UserAuthenticationResetRequest userAuthenticationResetRequest =
                 userAuthenticationResetRequestHelper.create();
-            Set<UserAuthenticationResetRequest> userAuthenticationResetRequests =
-                userAuthentication.getUserAuthenticationResetRequests();
-            userAuthenticationResetRequests.add(userAuthenticationResetRequest);
+            userAuthentication.getUserAuthenticationResetRequests().add(userAuthenticationResetRequest);
             userIdentityRepository.save(userIdentity);
             emailSendingEngine.sendPasswordResetEmail(userAuthenticationResetRequest);
         }
@@ -489,9 +472,7 @@ public class AuthenticationService {
             UserIdentity userIdentity = userAuthenticationResetRequest.getUserAuthentication().getUserIdentity();
             UserAuthentication userAuthentication = userAuthenticationHelper.createUserAuthentication(userIdentity,
                 srpSalt, srpVerifier, request.getPasswordStretchingAlgorithm());
-            Set<UserAuthentication> userAuthentications = userIdentity.getAuthentications();
-            userAuthentications.add(userAuthentication);
-            userIdentity.setAuthentications(userAuthentications);
+            userIdentity.getAuthentications().add(userAuthentication);
 
             userIdentityRepository.save(userIdentity);
             userAuthenticationResetRequestRepository.delete(userAuthenticationResetRequest);

@@ -7,6 +7,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @NodeEntity
@@ -22,13 +23,13 @@ public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
 
     @Relationship(type = "IS_CURRENTLY_AUTHENTICATING_WITH_SRP_DATA")
-    private Set<UserTemporarySRPData> userTemporarySrpDatas;
+    private Set<UserTemporarySRPData> userTemporarySrpDatas = new HashSet<>();
 
     @Relationship(type = "HAS_AUTHENTICATION_SESSION")
-    private Set<AuthenticationSession> authenticationSessions;
+    private Set<AuthenticationSession> authenticationSessions = new HashSet<>();
 
     @Relationship(type = "HAS_RESET_REQUESTED")
-    private Set<UserAuthenticationResetRequest> userAuthenticationResetRequests;
+    private Set<UserAuthenticationResetRequest> userAuthenticationResetRequests = new HashSet<>();
 
     @Relationship(type = "AUTHENTICATES_WITH", direction = Relationship.INCOMING)
     private UserIdentity userIdentity;
@@ -77,16 +78,16 @@ public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
         return authenticationSessions;
     }
 
+    public void setAuthenticationSessions(Set<AuthenticationSession> authenticationSessions) {
+        this.authenticationSessions = authenticationSessions;
+    }
+
     public Set<UserAuthenticationResetRequest> getUserAuthenticationResetRequests() {
         return userAuthenticationResetRequests;
     }
 
     public void setUserAuthenticationResetRequests(Set<UserAuthenticationResetRequest> userAuthenticationResetRequests) {
         this.userAuthenticationResetRequests = userAuthenticationResetRequests;
-    }
-
-    public void setAuthenticationSessions(Set<AuthenticationSession> authenticationSessions) {
-        this.authenticationSessions = authenticationSessions;
     }
 
     public UserIdentity getUserIdentity() {
