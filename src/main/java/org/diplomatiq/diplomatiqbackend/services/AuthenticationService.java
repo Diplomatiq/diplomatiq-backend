@@ -227,7 +227,7 @@ public class AuthenticationService {
     }
 
     public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) {
-        String emailAddress = request.getEmailAddress();
+        String emailAddress = request.getEmailAddress().toLowerCase();
 
         byte[] serverEphemeralBytes;
         try {
@@ -243,9 +243,6 @@ public class AuthenticationService {
 
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
         BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
-
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm =
-            currentAuthentication.getPasswordStretchingAlgorithm();
 
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),

@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface UserIdentityRepository extends Neo4jRepository<UserIdentity, String> {
     Optional<UserIdentity> findByEmailAddress(String emailAddress);
     Optional<UserIdentity> findByEmailValidationKey(String emailValidationKey);
+    boolean existsByEmailAddress(String emailAddress);
 }

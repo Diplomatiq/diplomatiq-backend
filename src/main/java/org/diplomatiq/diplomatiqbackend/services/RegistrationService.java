@@ -46,7 +46,13 @@ public class RegistrationService {
             throw new BadRequestException("SRP verifier could not be decoded.", ex);
         }
 
-        UserIdentity userIdentity = userIdentityHelper.createUserIdentity(request.getEmailAddress(),
+        String emailAddress = request.getEmailAddress().toLowerCase();
+
+        if (userIdentityRepository.existsByEmailAddress(emailAddress)) {
+            return;
+        }
+
+        UserIdentity userIdentity = userIdentityHelper.createUserIdentity(emailAddress,
             request.getFirstName(), request.getLastName());
 
         UserAuthentication userAuthentication =

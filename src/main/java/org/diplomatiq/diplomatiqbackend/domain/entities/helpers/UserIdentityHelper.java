@@ -25,7 +25,7 @@ public class UserIdentityHelper {
     public UserIdentity createUserIdentity(String emailAddress, String firstName, String lastName) {
         UserIdentity userIdentity = new UserIdentity();
 
-        userIdentity.setEmailAddress(emailAddress.toLowerCase());
+        userIdentity.setEmailAddress(emailAddress);
         userIdentity.setFirstName(firstName);
         userIdentity.setLastName(lastName);
         userIdentity.setEmailValidated(false);
