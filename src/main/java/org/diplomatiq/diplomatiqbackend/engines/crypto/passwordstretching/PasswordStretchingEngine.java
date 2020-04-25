@@ -1,6 +1,5 @@
 package org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching;
 
-import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.argon2.Argon2;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -19,15 +18,5 @@ public class PasswordStretchingEngine {
         return passwordStretchingAlgorithmByVersionMap.get(
             Collections.max(passwordStretchingAlgorithmByVersionMap.keySet())
         );
-    }
-
-    public AbstractPasswordStretchingAlgorithmImpl getImplByAlgorithm(PasswordStretchingAlgorithm algorithm) {
-        switch (algorithm) {
-            case Argon2_v1:
-                return Argon2.v1();
-            default:
-                throw new UnsupportedOperationException(String.format("No such algorithm found: %s.",
-                    algorithm));
-        }
     }
 }

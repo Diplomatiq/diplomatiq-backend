@@ -24,6 +24,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 @Tag(name = "Unauthenticated methods", description = "These methods are available without authentication and request " +
     "signing.")
@@ -110,7 +111,7 @@ public class UnauthenticatedMethods {
         @Parameter(description = "The request body as a `PasswordAuthenticationInitV1Request` object")
         @Valid
         @RequestBody
-            PasswordAuthenticationInitV1Request request) {
+            PasswordAuthenticationInitV1Request request) throws NoSuchAlgorithmException {
         return authenticationService.passwordAuthenticationInitV1(request);
     }
 

@@ -1,12 +1,11 @@
 package org.diplomatiq.diplomatiqbackend.services;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
-import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.*;
 import org.diplomatiq.diplomatiqbackend.domain.entities.utils.ExpirationUtils;
-import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.AbstractPasswordStretchingAlgorithmImpl;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
 import org.diplomatiq.diplomatiqbackend.engines.mail.EmailSendingEngine;
@@ -184,7 +183,7 @@ public class AuthenticationService {
         SecurityContextHolder.clearContext();
     }
 
-    public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) {
+    public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) throws NoSuchAlgorithmException {
         String emailAddress = request.getEmailAddress().toLowerCase();
         Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailAddress(emailAddress);
         boolean existingUser = userIdentityOptional.isPresent();
@@ -194,19 +193,9 @@ public class AuthenticationService {
             userIdentity = userIdentityOptional.get();
         } else {
             userIdentity = userIdentityHelper.createUserIdentity(emailAddress, "", "");
-
             byte[] salt = RandomUtils.bytes(32);
-            byte[] identity = RandomUtils.bytes(32);
-            byte[] password = RandomUtils.bytes(32);
-
+            byte[] verifier = RandomUtils.bytes(1024);
             PasswordStretchingAlgorithm passwordStretchingAlgorithm = passwordStretchingEngine.getLatestAlgorithm();
-            AbstractPasswordStretchingAlgorithmImpl passwordStretchingAlgorithmImpl =
-                passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
-
-            SRP6VerifierGenerator srp6VerifierGenerator = new SRP6VerifierGenerator();
-            srp6VerifierGenerator.init(SRP6StandardGroups.rfc5054_8192, passwordStretchingAlgorithmImpl);
-            byte[] verifier = srp6VerifierGenerator.generateVerifier(salt, identity, password).toByteArray();
-
             UserAuthentication userAuthentication = userAuthenticationHelper.createUserAuthentication(userIdentity,
                 salt, verifier, passwordStretchingAlgorithm);
             userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -217,13 +206,8 @@ public class AuthenticationService {
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
         BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
 
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm =
-            currentAuthentication.getPasswordStretchingAlgorithm();
-        AbstractPasswordStretchingAlgorithmImpl passwordStretchingAlgorithmImpl =
-            passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
-
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
-        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, passwordStretchingAlgorithmImpl,
+        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
@@ -267,11 +251,9 @@ public class AuthenticationService {
 
         PasswordStretchingAlgorithm passwordStretchingAlgorithm =
             currentAuthentication.getPasswordStretchingAlgorithm();
-        AbstractPasswordStretchingAlgorithmImpl abstractPasswordStretchingAlgorithmImpl =
-            passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
 
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
-        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, abstractPasswordStretchingAlgorithmImpl,
+        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
         Set<UserTemporarySRPData> userTemporarySrpDatas =
@@ -360,13 +342,8 @@ public class AuthenticationService {
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
         BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
 
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm =
-            currentAuthentication.getPasswordStretchingAlgorithm();
-        AbstractPasswordStretchingAlgorithmImpl passwordStretchingAlgorithmImpl =
-            passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
-
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
-        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, passwordStretchingAlgorithmImpl,
+        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
@@ -402,13 +379,8 @@ public class AuthenticationService {
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
         BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
 
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm =
-            currentAuthentication.getPasswordStretchingAlgorithm();
-        AbstractPasswordStretchingAlgorithmImpl abstractPasswordStretchingAlgorithmImpl =
-            passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
-
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
-        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, abstractPasswordStretchingAlgorithmImpl,
+        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
         Set<UserTemporarySRPData> userTemporarySrpData =
