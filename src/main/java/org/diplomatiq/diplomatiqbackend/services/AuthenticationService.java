@@ -1,6 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.services;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
+import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.util.Arrays;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.*;
@@ -184,10 +185,33 @@ public class AuthenticationService {
     }
 
     public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) {
-        String emailAddress = request.getEmailAddress();
-        UserIdentity userIdentity =
-            userIdentityRepository.findByEmailAddress(emailAddress)
-                .orElseThrow(() -> new UnauthorizedException("UserIdentity not found."));
+        String emailAddress = request.getEmailAddress().toLowerCase();
+        Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailAddress(emailAddress);
+        boolean existingUser = userIdentityOptional.isPresent();
+
+        UserIdentity userIdentity;
+        if (existingUser) {
+            userIdentity = userIdentityOptional.get();
+        } else {
+            userIdentity = userIdentityHelper.createUserIdentity(emailAddress, "", "");
+
+            byte[] salt = RandomUtils.bytes(32);
+            byte[] identity = RandomUtils.bytes(32);
+            byte[] password = RandomUtils.bytes(32);
+
+            PasswordStretchingAlgorithm passwordStretchingAlgorithm = passwordStretchingEngine.getLatestAlgorithm();
+            AbstractPasswordStretchingAlgorithmImpl passwordStretchingAlgorithmImpl =
+                passwordStretchingEngine.getImplByAlgorithm(passwordStretchingAlgorithm);
+
+            SRP6VerifierGenerator srp6VerifierGenerator = new SRP6VerifierGenerator();
+            srp6VerifierGenerator.init(SRP6StandardGroups.rfc5054_8192, passwordStretchingAlgorithmImpl);
+            byte[] verifier = srp6VerifierGenerator.generateVerifier(salt, identity, password).toByteArray();
+
+            UserAuthentication userAuthentication = userAuthenticationHelper.createUserAuthentication(userIdentity,
+                salt, verifier, passwordStretchingAlgorithm);
+            userIdentity.setAuthentications(Set.of(userAuthentication));
+        }
+
         UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
 
         byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
@@ -215,7 +239,9 @@ public class AuthenticationService {
         UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralBytes);
         userTemporarySRPDatas.add(userTemporarySRPData);
 
-        userIdentityRepository.save(userIdentity);
+        if (existingUser) {
+            userIdentityRepository.save(userIdentity);
+        }
 
         return new PasswordAuthenticationInitV1Response(serverEphemeralBase64, srpSaltBase64,
             currentAuthentication.getPasswordStretchingAlgorithm());
