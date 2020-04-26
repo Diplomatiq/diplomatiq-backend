@@ -490,9 +490,9 @@ public class AuthenticationService {
         }
     }
 
-    public void requestPasswordResetV1(String emailAddress) throws IOException {
+    public void requestPasswordResetV1(RequestPasswordResetV1Request request) throws IOException {
         Optional<UserIdentity> userIdentityOptional =
-            userIdentityRepository.findByEmailAddress(emailAddress.toLowerCase());
+            userIdentityRepository.findByEmailAddress(request.getEmailAddress().toLowerCase());
         if (userIdentityOptional.isPresent()) {
             UserIdentity userIdentity = userIdentityOptional.get();
             UserAuthentication userAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);

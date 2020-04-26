@@ -8,10 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationCompleteV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.PasswordAuthenticationInitV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.RegisterUserV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ResetPasswordV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.*;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
@@ -21,7 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -142,19 +138,15 @@ public class UnauthenticatedMethods {
     @RequestMapping(
         name = "requestPasswordResetV1",
         path = "request-password-reset-v1",
-        method = RequestMethod.GET
+        method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public void requestPasswordResetV1(
-        @Parameter(
-            description = "The email address of the user requesting the password reset (will not be revealed if " +
-                "exists)",
-            example = "samsepi0l@diplomatiq.org"
-        )
-        @NotBlank
-        @Email
-        @RequestParam
-            String emailAddress) throws IOException {
-        authenticationService.requestPasswordResetV1(emailAddress);
+        @Parameter(description = "The request body as a `RequestPasswordResetV1Request` object")
+        @Valid
+        @RequestBody
+            RequestPasswordResetV1Request request) throws IOException {
+        authenticationService.requestPasswordResetV1(request);
     }
 
     @Operation(
