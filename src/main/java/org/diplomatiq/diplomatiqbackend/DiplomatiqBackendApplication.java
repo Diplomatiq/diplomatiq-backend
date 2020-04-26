@@ -8,7 +8,6 @@ import java.security.Security;
 
 @SpringBootApplication
 public class DiplomatiqBackendApplication {
-
 	public static void main(String[] args) {
 	    configureBouncyCastle();
 		SpringApplication.run(DiplomatiqBackendApplication.class, args);
@@ -17,5 +16,4 @@ public class DiplomatiqBackendApplication {
 	private static void configureBouncyCastle() {
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
     }
-
 }

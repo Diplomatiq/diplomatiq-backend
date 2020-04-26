@@ -6,7 +6,6 @@ import com.sendgrid.SendGrid;
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Email;
 import com.sendgrid.helpers.mail.objects.Personalization;
-import org.diplomatiq.diplomatiqbackend.configuration.SendGridConfiguration;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.AuthenticationSessionMultiFactorElevationRequest;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.SessionMultiFactorElevationRequest;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthenticationResetRequest;
@@ -27,7 +26,7 @@ public class EmailSendingEngine {
     }
 
     @Autowired
-    SendGridConfiguration sendGridConfiguration;
+    SendGrid sendGridApiClient;
 
     public void sendEmailAddressValidationEmail(UserIdentity userIdentity) throws IOException {
         Email toEmail = new Email();
@@ -57,8 +56,7 @@ public class EmailSendingEngine {
         request.setEndpoint("mail/send");
         request.setBody(mail.build());
 
-        SendGrid sendGrid = sendGridConfiguration.sendGridApiClient();
-        sendGrid.api(request);
+        sendGridApiClient.api(request);
     }
 
     public void sendPasswordResetEmail(UserAuthenticationResetRequest userAuthenticationResetRequest) throws IOException {
@@ -91,8 +89,7 @@ public class EmailSendingEngine {
         request.setEndpoint("mail/send");
         request.setBody(mail.build());
 
-        SendGrid sendGrid = sendGridConfiguration.sendGridApiClient();
-        sendGrid.api(request);
+        sendGridApiClient.api(request);
     }
 
     public void sendMultiFactorAuthenticationEmail(SessionMultiFactorElevationRequest sessionMultiFactorElevationRequest) throws IOException {
@@ -132,7 +129,6 @@ public class EmailSendingEngine {
         request.setEndpoint("mail/send");
         request.setBody(mail.build());
 
-        SendGrid sendGrid = sendGridConfiguration.sendGridApiClient();
-        sendGrid.api(request);
+        sendGridApiClient.api(request);
     }
 }

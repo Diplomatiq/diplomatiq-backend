@@ -12,17 +12,17 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableNeo4jRepositories("org.diplomatiq.diplomatiqbackend.repositories")
 @EnableTransactionManagement
 public class Neo4jConfiguration {
-    @Value("${NEO4J_URI:bolt://localhost:7687}")
+    @Value("${neo4j.uri}")
     private String uri;
 
-    @Value("${NEO4J_DATABASE:neo4j}")
-    private String database;
-
-    @Value("${NEO4J_USERNAME:neo4j}")
+    @Value("${neo4j.username}")
     private String username;
 
-    @Value("${NEO4J_PASSWORD:secret}")
+    @Value("${neo4j.password}")
     private String password;
+
+    @Value("${neo4j.database}")
+    private String database;
 
     @Bean
     public SessionFactory sessionFactory() {
@@ -33,8 +33,8 @@ public class Neo4jConfiguration {
     public org.neo4j.ogm.config.Configuration configuration() {
         return new org.neo4j.ogm.config.Configuration.Builder()
             .uri(uri)
-            .database(database)
             .credentials(username, password)
+            .database(database)
             .autoIndex("update")
             .build();
     }

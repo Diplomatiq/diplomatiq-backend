@@ -7,8 +7,6 @@ import org.neo4j.ogm.typeconversion.AttributeConverter;
 import java.util.*;
 
 public class EncryptedBytesConverter implements AttributeConverter<byte[], String> {
-    private static final String DUMMY_ENCRYPTION_KEY_BASE64 = "c2VjcmV0c2VjcmV0IHNlY3JldCBzZWNyZXRzZWNyZXQ=";
-
     @Override
     public String toGraphProperty(byte[] bytes) {
         try {
@@ -47,9 +45,6 @@ public class EncryptedBytesConverter implements AttributeConverter<byte[], Strin
     }
 
     private byte[] getKeyFromEnvironmentVariableOrGetDummyKey(String environmentVariableName) {
-        return Base64.getDecoder().decode(
-            Optional.ofNullable(System.getenv(environmentVariableName))
-                .orElse(DUMMY_ENCRYPTION_KEY_BASE64)
-        );
+        return Base64.getDecoder().decode(Optional.ofNullable(System.getenv(environmentVariableName)).orElseThrow());
     }
 }
