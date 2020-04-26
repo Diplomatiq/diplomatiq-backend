@@ -480,9 +480,9 @@ public class AuthenticationService {
         sessionRepository.save(session);
     }
 
-    public void validateEmailAddressV1(String emailValidationKey) {
+    public void validateEmailAddressV1(ValidateEmailAddressV1Request request) {
         Optional<UserIdentity> userIdentityOptional =
-            userIdentityRepository.findByEmailValidationKey(emailValidationKey);
+            userIdentityRepository.findByEmailValidationKey(request.getEmailValidationKey());
         if (userIdentityOptional.isPresent()) {
             UserIdentity userIdentity = userIdentityOptional.get();
             userIdentity.setEmailValidated(true);

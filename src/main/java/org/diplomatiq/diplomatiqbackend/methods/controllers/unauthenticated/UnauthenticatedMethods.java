@@ -179,15 +179,11 @@ public class UnauthenticatedMethods {
         method = RequestMethod.GET
     )
     public void validateEmailAddressV1(
-        @Parameter(
-            description = "The email validation key the user received in email",
-            example =
-                "9i6ExDuo9dpvvV8djypUhQNlomvODXO0S5lRCFvxNHyiiiZTm3iT87Doj5IFDwhlSHpbiEKRPEcK0Fb4OdPRTYVmOd39gJIxE4AgI3hw6ZUcrDcz05i1jjrMEQydL819tbU6y02XgNOl4evk2oYGK1"
-        )
-        @NotBlank
-        @RequestParam
-            String emailValidationKey
+        @Parameter(description = "The request body as a `ValidateEmailAddressV1Request` object")
+        @Valid
+        @RequestBody
+            ValidateEmailAddressV1Request request
     ) {
-        authenticationService.validateEmailAddressV1(emailValidationKey);
+        authenticationService.validateEmailAddressV1(request);
     }
 }

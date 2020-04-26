@@ -10,6 +10,7 @@ public class ResetPasswordV1Request {
         description = "The password reset key the user received in email",
         example = "GByslDchKVGE5JZ6xagTa7nwRIkI7Ql1pP56kb1gst18A14diSEDpRvi0QPHZRSUsJKAPgBnSDnIadmLZyXV8JfbhEl4nKLWzzQVpKNN5oMkqcQ1mWqOJTvLD17x2TCjPlGyJ1hpwoF8jyIJPJT6g7"
     )
+    @NotBlank
     private String passwordResetKey;
 
     @Schema(
