@@ -134,5 +134,4 @@ public class DiplomatiqHeaders {
             header -> headersWithDescriptions.get(KnownHeader.valueOf(header))
         )
     );
-
 }

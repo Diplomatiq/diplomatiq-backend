@@ -176,7 +176,7 @@ public class UnauthenticatedMethods {
     @RequestMapping(
         name = "validateEmailAddressV1",
         path = "validate-email-address-v1",
-        method = RequestMethod.GET
+        method = RequestMethod.POST
     )
     public void validateEmailAddressV1(
         @Parameter(description = "The request body as a `ValidateEmailAddressV1Request` object")
