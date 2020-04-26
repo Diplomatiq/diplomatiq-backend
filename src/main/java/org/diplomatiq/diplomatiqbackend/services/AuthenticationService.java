@@ -39,7 +39,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.Set;
@@ -80,6 +79,9 @@ public class AuthenticationService {
 
     @Autowired
     private UserAuthenticationHelper userAuthenticationHelper;
+
+    @Autowired
+    private SessionMultiFactorElevationRequestHelper sessionMultiFactorElevationRequestHelper;
 
     public byte[] getDeviceContainerKeyV1(String deviceId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElse(userDeviceHelper.createUserDevice());
@@ -416,8 +418,35 @@ public class AuthenticationService {
 
         String sessionId = getCurrentAuthenticationDetails().getAuthenticationId();
         Session session = sessionRepository.findById(sessionId).orElseThrow();
-        Session elevatedSession = SessionHelper.elevateSessionToPasswordElevated(session);
-        sessionRepository.save(elevatedSession);
+        SessionHelper.elevateSessionToPasswordElevated(session);
+        sessionRepository.save(session);
+    }
+
+    public void elevatePasswordElevatedSessionInitV1() throws IOException {
+        Session session = sessionRepository.findById(getCurrentAuthenticationDetails().getAuthenticationId())
+            .orElseThrow();
+
+        SessionMultiFactorElevationRequest elevationRequest = sessionMultiFactorElevationRequestHelper.create();
+        session.getSessionMultiFactorElevationRequests().add(elevationRequest);
+        sessionRepository.save(session);
+
+        emailSendingEngine.sendMultiFactorAuthenticationEmail(elevationRequest);
+    }
+
+    public void elevatePasswordElevatedSessionCompleteV1(ElevatePasswordElevatedSessionCompleteV1Request requestV1) {
+        String authenticationCode = requestV1.getRequestCode();
+
+        Session session = sessionRepository.findById(getCurrentAuthenticationDetails().getAuthenticationId())
+            .orElseThrow();
+        session.getSessionMultiFactorElevationRequests().removeIf(ExpirationUtils::isExpiredNow);
+        boolean authenticationCodeFound = session.getSessionMultiFactorElevationRequests()
+            .removeIf(r -> r.getRequestCode().equals(authenticationCode));
+        if (!authenticationCodeFound) {
+            throw new UnauthorizedException("Authentication code not found.");
+        }
+
+        SessionHelper.elevateSessionToMultiFactorElevated(session);
+        sessionRepository.save(session);
     }
 
     public void validateEmailAddressV1(String emailValidationKey) {
@@ -497,13 +526,11 @@ public class AuthenticationService {
         return authenticationSession.getAuthenticationSessionKey();
     }
 
-    @Transactional(noRollbackFor = { ExpiredException.class })
     public UserIdentity verifyAuthenticationSessionCredentials(String authenticationSessionId) {
         AuthenticationSession authenticationSession =
             authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
 
         if (ExpirationUtils.isExpiredNow(authenticationSession)) {
-            authenticationSessionRepository.delete(authenticationSession);
             throw new ExpiredException("Authentication session expired.");
         }
 
@@ -515,7 +542,6 @@ public class AuthenticationService {
         return userDevice.getUserIdentity();
     }
 
-    @Transactional(noRollbackFor = { ExpiredException.class })
     public UserIdentity verifySessionCredentials(String deviceId, String sessionId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
         Session session = sessionRepository.findById(sessionId).orElseThrow();
@@ -525,7 +551,6 @@ public class AuthenticationService {
         }
 
         if (ExpirationUtils.isExpiredNow(session)) {
-            sessionRepository.delete(session);
             throw new ExpiredException("Session expired.");
         }
 
@@ -540,7 +565,7 @@ public class AuthenticationService {
             return false;
         }
 
-        if (session.getAssuranceLevelExpirationTime().isBefore(Instant.now())) {
+        if (ExpirationUtils.isExpiredNow(session.getAssuranceLevelExpirationTime())) {
             SessionHelper.downgradeSessionToRegular(session);
             sessionRepository.save(session);
             return false;

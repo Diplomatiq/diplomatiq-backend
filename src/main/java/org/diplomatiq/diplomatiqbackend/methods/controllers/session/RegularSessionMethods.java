@@ -56,7 +56,7 @@ public class RegularSessionMethods {
     private AuthenticationService authenticationService;
 
     @Operation(
-        summary = "Initiate session elevation to PasswordElevated assurance level",
+        summary = "Initiate session elevation to PasswordElevatedSession assurance level",
         description = "Initiates the authentication flow for the current user, based on the Secure Remote Password " +
             "protocol (version 6a)."
     )
@@ -71,9 +71,9 @@ public class RegularSessionMethods {
     }
 
     @Operation(
-        summary = "Complete session elevation to PasswordElevated assurance level",
+        summary = "Complete session elevation to PasswordElevatedSession assurance level",
         description = "Completes an authentication flow for the given email address, based on the Secure Remote " +
-            "Password protocol (version 6a). If successful, the current session was elevated to `PasswordElevated` " +
+            "Password protocol (version 6a). If successful, the current session was elevated to `PasswordElevatedSession` " +
             "assurance level."
     )
     @RequestMapping(

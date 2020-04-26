@@ -10,12 +10,24 @@ public class ExpirationUtils {
         return isExpiredAt(entity, Instant.now());
     }
 
-    public static boolean isExpiredIn(AbstractExpiringNodeEntity entity, Duration duration) {
-        return isExpiredAt(entity, Instant.now().plus(duration));
+    public static boolean isExpiredNow(Instant instant) {
+        return isExpiredAt(instant, Instant.now());
     }
 
-    public static boolean isExpiredAt(AbstractExpiringNodeEntity entity, Instant instant) {
-        return entity.getExpirationTime().isBefore(instant);
+    public static boolean isExpiredIn(AbstractExpiringNodeEntity entity, Duration in) {
+        return isExpiredAt(entity, Instant.now().plus(in));
+    }
+
+    public static boolean isExpiredIn(Instant instant, Duration in) {
+        return isExpiredAt(instant, Instant.now().plus(in));
+    }
+
+    public static boolean isExpiredAt(AbstractExpiringNodeEntity entity, Instant at) {
+        return entity.getExpirationTime().isBefore(at);
+    }
+
+    public static boolean isExpiredAt(Instant instant, Instant at) {
+        return instant.isBefore(at);
     }
 
     public static void setExpirationLifeSpan(AbstractExpiringNodeEntity entity, Duration duration) {

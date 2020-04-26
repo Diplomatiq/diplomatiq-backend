@@ -23,7 +23,7 @@ public class SessionHelper {
         return session;
     }
 
-    public static Session elevateSessionToPasswordElevated(Session session) {
+    public static void elevateSessionToPasswordElevated(Session session) {
         session.setAssuranceLevel(SessionAssuranceLevel.PasswordElevatedSession);
 
         Instant loaMaxExpirationTime = Instant.now().plus(PASSWORD_ELEVATED_LEVEL_VALIDITY);
@@ -32,11 +32,9 @@ public class SessionHelper {
         Instant loaExpirationTime =
             Stream.of(loaMaxExpirationTime, sessionExpirationTime).min(Instant::compareTo).get();
         session.setAssuranceLevelExpirationTime(loaExpirationTime);
-
-        return session;
     }
 
-    public static Session elevateSessionToMultiFactorElevated(Session session) {
+    public static void elevateSessionToMultiFactorElevated(Session session) {
         session.setAssuranceLevel(SessionAssuranceLevel.MultiFactorElevatedSession);
 
         Instant loaMaxExpirationTime = Instant.now().plus(MULTI_FACTOR_ELEVATED_LEVEL_VALIDITY);
@@ -45,13 +43,10 @@ public class SessionHelper {
         Instant loaExpirationTime =
             Stream.of(loaMaxExpirationTime, sessionExpirationTime).min(Instant::compareTo).get();
         session.setAssuranceLevelExpirationTime(loaExpirationTime);
-
-        return session;
     }
 
-    public static Session downgradeSessionToRegular(Session session) {
+    public static void downgradeSessionToRegular(Session session) {
         session.setAssuranceLevel(SessionAssuranceLevel.RegularSession);
         session.setAssuranceLevelExpirationTime(session.getExpirationTime());
-        return session;
     }
 }
