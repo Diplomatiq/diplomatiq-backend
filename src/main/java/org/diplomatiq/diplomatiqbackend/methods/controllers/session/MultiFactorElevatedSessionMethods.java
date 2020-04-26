@@ -39,6 +39,6 @@ import org.springframework.web.bind.annotation.RestController;
     @SecurityRequirement(name = "SignedHeaders"),
 })
 @RestController
-@PreAuthorize("hasSessionAssuranceLevel('MultiFactorElevatedSession')")
+@PreAuthorize("authenticatedBySessionWithAssuranceLevel('MultiFactorElevatedSession')")
 public class MultiFactorElevatedSessionMethods {
 }

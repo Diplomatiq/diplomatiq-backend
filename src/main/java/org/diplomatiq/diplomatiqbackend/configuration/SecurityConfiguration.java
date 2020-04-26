@@ -2,6 +2,7 @@ package org.diplomatiq.diplomatiqbackend.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.access.ControllerSecurityExpressionHandler;
+import org.diplomatiq.diplomatiqbackend.access.UnauthorizedAccessDeniedHandler;
 import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqMethods;
@@ -119,7 +120,10 @@ public class SecurityConfiguration {
                 "/get-device-container-key-v1",
                 "/password-authentication-complete-v1",
                 "/password-authentication-init-v1",
-                "/register-user-v1"
+                "/register-user-v1",
+                "/request-password-reset-v1",
+                "/reset-password-v1",
+                "/validate-email-address-v1"
             )
         );
 
@@ -204,9 +208,11 @@ public class SecurityConfiguration {
                     authenticationService, globalExceptionHandler),
                 RequestSignatureVerificationFilter.class);
 
+            http.exceptionHandling().accessDeniedHandler(new UnauthorizedAccessDeniedHandler(globalExceptionHandler,
+                objectMapper));
+
             http.anonymous().disable();
             http.csrf().disable();
-            http.exceptionHandling().disable();
             http.formLogin().disable();
             http.httpBasic().disable();
             http.logout().disable();

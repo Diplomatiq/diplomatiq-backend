@@ -50,7 +50,7 @@ import javax.validation.Valid;
     @SecurityRequirement(name = "SignedHeaders"),
 })
 @RestController
-@PreAuthorize("hasSessionAssuranceLevel('RegularSession')")
+@PreAuthorize("authenticatedBySessionWithAssuranceLevel('RegularSession')")
 public class RegularSessionMethods {
     @Autowired
     private AuthenticationService authenticationService;

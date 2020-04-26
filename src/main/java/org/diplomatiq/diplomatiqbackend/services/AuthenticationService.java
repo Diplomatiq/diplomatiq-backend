@@ -353,7 +353,7 @@ public class AuthenticationService {
             throw new UnauthorizedException("Authentication code not found.");
         }
 
-        AuthenticationSessionHelper.elevateAuthenticationSession(authenticationSession);
+        AuthenticationSessionHelper.elevateAuthenticationSessionToMultiFactorElevated(authenticationSession);
         authenticationSessionRepository.save(authenticationSession);
     }
 
@@ -588,7 +588,7 @@ public class AuthenticationService {
         return userDevice.getUserIdentity();
     }
 
-    public boolean hasSessionAssuranceLevel(String sessionId, SessionAssuranceLevel requiredAssuranceLevel) {
+    public boolean sessionHasAssuranceLevel(String sessionId, SessionAssuranceLevel requiredAssuranceLevel) {
         Session session = sessionRepository.findById(sessionId)
             .orElseThrow(() -> new UnauthorizedException("No session found with the given ID."));
 
@@ -599,6 +599,23 @@ public class AuthenticationService {
         if (ExpirationUtils.isExpiredNow(session.getAssuranceLevelExpirationTime())) {
             SessionHelper.downgradeSessionToRegular(session);
             sessionRepository.save(session);
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean authenticationSessionHasAssuranceLevel(String authenticationSessionId, SessionAssuranceLevel requiredAssuranceLevel) {
+        AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
+            .orElseThrow(() -> new UnauthorizedException("No authentication session found with the given ID."));
+
+        if (authenticationSession.getAssuranceLevel().getNumericAssuranceLevel() < requiredAssuranceLevel.getNumericAssuranceLevel()) {
+            return false;
+        }
+
+        if (ExpirationUtils.isExpiredNow(authenticationSession.getAssuranceLevelExpirationTime())) {
+            AuthenticationSessionHelper.downgradeAuthenticationSessionToPasswordElevated(authenticationSession);
+            authenticationSessionRepository.save(authenticationSession);
             return false;
         }
 

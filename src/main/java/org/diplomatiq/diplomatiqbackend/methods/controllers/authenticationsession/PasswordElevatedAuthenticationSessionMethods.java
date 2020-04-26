@@ -1,4 +1,4 @@
-package org.diplomatiq.diplomatiqbackend.methods.controllers.session;
+package org.diplomatiq.diplomatiqbackend.methods.controllers.authenticationsession;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
-import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevatePasswordElevatedSessionCompleteV1Request;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevateAuthenticationSessionCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -23,9 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import java.io.IOException;
 
-@Tag(name = "Session methods - PasswordElevatedSession", description = "These methods are available with a valid " +
-    "session, with at least `PasswordElevatedSession` assurance level (the middle authentication assurance level). " +
-    "Requests must be authenticated and signed according to the `SignedRequestV1` authentication scheme.")
+@Tag(
+    name = "Authentication session methods - PasswordElevatedSession",
+    description = "These methods are available with an authentication session, with at least " +
+        "`PasswordElevatedSession` assurance level. Requests must be authenticated and signed according to the " +
+        "`AuthenticationSessionSignatureV1` authentication scheme."
+)
 @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -42,50 +45,49 @@ import java.io.IOException;
     )
 })
 @SecurityRequirements({
+    @SecurityRequirement(name = "AuthenticationSessionId"),
     @SecurityRequirement(name = "Authorization"),
     @SecurityRequirement(name = "ClientId"),
-    @SecurityRequirement(name = "DeviceId"),
     @SecurityRequirement(name = "Instant"),
-    @SecurityRequirement(name = "SessionId"),
     @SecurityRequirement(name = "SignedHeaders"),
 })
 @RestController
-@PreAuthorize("authenticatedBySessionWithAssuranceLevel('PasswordElevatedSession')")
-public class PasswordElevatedSessionMethods {
+@PreAuthorize("authenticatedByAuthenticationSessionWithAssuranceLevel('PasswordElevatedSession')")
+public class PasswordElevatedAuthenticationSessionMethods {
     @Autowired
     private AuthenticationService authenticationService;
 
     @Operation(
-        summary = "Initiate session elevation to MultiFactorElevatedSession assurance level",
+        summary = "Initiate authentication session elevation to MultiFactorElevatedSession assurance level",
         description = "Sends an email to the email address of the currently authenticated user with a multi-factor " +
             "authentication code."
     )
     @RequestMapping(
-        name = "elevatePasswordElevatedSessionInitV1",
-        path = "elevate-password-elevated-session-init-v1",
+        name = "elevateAuthenticationSessionInitV1",
+        path = "elevate-authentication-session-init-v1",
         method = RequestMethod.POST
     )
-    public void elevatePasswordElevatedSessionInitV1() throws IOException {
-        authenticationService.elevatePasswordElevatedSessionInitV1();
+    public void elevateAuthenticationSessionInitV1() throws IOException {
+        authenticationService.elevateAuthenticationSessionInitV1();
     }
 
     @Operation(
-        summary = "Complete session elevation to MultiFactorElevatedSession assurance level",
+        summary = "Complete authentication session elevation to MultiFactorElevatedSession assurance level",
         description = "Verifies a multi-factor authentication code previously sent to the user's email address. If " +
-            "successful, the current session was elevated to `MultiFactorElevatedSession` assurance level."
+            "successful, the current authentication session was elevated to `MultiFactorElevatedSession` assurance " +
+            "level."
     )
     @RequestMapping(
-        name = "elevatePasswordElevatedSessionCompleteV1",
-        path = "elevate-password-elevated-session-complete-v1",
-        method = RequestMethod.POST,
-        consumes = MediaType.APPLICATION_JSON_VALUE
+        name = "elevateAuthenticationSessionCompleteV1",
+        path = "elevate-authentication-session-complete-v1",
+        method = RequestMethod.POST
     )
-    public void elevatePasswordElevatedSessionCompleteV1(
-        @Parameter(description = "The request body as a `ElevatePasswordElevatedSessionCompleteV1Request` object")
+    public void elevateAuthenticationSessionCompleteV1(
+        @Parameter(description = "The request body as a `ElevateAuthenticationSessionCompleteV1Request` object")
         @Valid
         @RequestBody
-            ElevatePasswordElevatedSessionCompleteV1Request request
+            ElevateAuthenticationSessionCompleteV1Request request
     ) {
-        authenticationService.elevatePasswordElevatedSessionCompleteV1(request);
+        authenticationService.elevateAuthenticationSessionCompleteV1(request);
     }
 }

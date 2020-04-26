@@ -21,7 +21,7 @@ public class AuthenticationSessionHelper {
         return authenticationSession;
     }
 
-    public static void elevateAuthenticationSession(AuthenticationSession authenticationSession) {
+    public static void elevateAuthenticationSessionToMultiFactorElevated(AuthenticationSession authenticationSession) {
         authenticationSession.setAssuranceLevel(SessionAssuranceLevel.MultiFactorElevatedSession);
 
         Instant loaMaxExpirationTime = Instant.now().plus(MULTI_FACTOR_ELEVATED_LEVEL_VALIDITY);
@@ -30,5 +30,10 @@ public class AuthenticationSessionHelper {
         Instant loaExpirationTime =
             Stream.of(loaMaxExpirationTime, authenticationSessionExpirationTime).min(Instant::compareTo).get();
         authenticationSession.setAssuranceLevelExpirationTime(loaExpirationTime);
+    }
+
+    public static void downgradeAuthenticationSessionToPasswordElevated(AuthenticationSession authenticationSession) {
+        authenticationSession.setAssuranceLevel(SessionAssuranceLevel.MultiFactorElevatedSession);
+        authenticationSession.setAssuranceLevelExpirationTime(authenticationSession.getExpirationTime());
     }
 }

@@ -19,7 +19,7 @@ public class ControllerSecurityExpressions extends SecurityExpressionRoot implem
         this.authenticationService = authenticationService;
     }
 
-    public boolean hasSessionAssuranceLevel(SessionAssuranceLevel requiredAssuranceLevel) {
+    public boolean authenticatedBySessionWithAssuranceLevel(SessionAssuranceLevel requiredAssuranceLevel) {
         Authentication authentication = getAuthentication();
         if (!(authentication instanceof AuthenticationToken)) {
             return false;
@@ -32,7 +32,39 @@ public class ControllerSecurityExpressions extends SecurityExpressionRoot implem
         }
 
         String sessionId = authenticationDetails.getAuthenticationId();
-        return authenticationService.hasSessionAssuranceLevel(sessionId, requiredAssuranceLevel);
+        return authenticationService.sessionHasAssuranceLevel(sessionId, requiredAssuranceLevel);
+    }
+
+    public boolean authenticatedByAuthenticationSessionWithAssuranceLevel(SessionAssuranceLevel requiredAssuranceLevel) {
+        Authentication authentication = getAuthentication();
+        if (!(authentication instanceof AuthenticationToken)) {
+            return false;
+        }
+
+        AuthenticationToken authenticationToken = (AuthenticationToken)authentication;
+        AuthenticationDetails authenticationDetails = authenticationToken.getCredentials();
+        if (!authenticationDetails.diplomatiqAuthenticationScheme().equals(DiplomatiqAuthenticationScheme.AuthenticationSessionSignatureV1)) {
+            return false;
+        }
+
+        String authenticationSessionId = authenticationDetails.getAuthenticationId();
+        return authenticationService.authenticationSessionHasAssuranceLevel(authenticationSessionId,
+            requiredAssuranceLevel);
+    }
+
+    public boolean authenticatedByDevice() {
+        Authentication authentication = getAuthentication();
+        if (!(authentication instanceof AuthenticationToken)) {
+            return false;
+        }
+
+        AuthenticationToken authenticationToken = (AuthenticationToken)authentication;
+        AuthenticationDetails authenticationDetails = authenticationToken.getCredentials();
+        if (!authenticationDetails.diplomatiqAuthenticationScheme().equals(DiplomatiqAuthenticationScheme.DeviceSignatureV1)) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
