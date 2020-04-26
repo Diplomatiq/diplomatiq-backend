@@ -7,6 +7,7 @@ import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Email;
 import com.sendgrid.helpers.mail.objects.Personalization;
 import org.diplomatiq.diplomatiqbackend.configuration.SendGridConfiguration;
+import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.AuthenticationSessionMultiFactorElevationRequest;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.SessionMultiFactorElevationRequest;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthenticationResetRequest;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
@@ -95,8 +96,20 @@ public class EmailSendingEngine {
     }
 
     public void sendMultiFactorAuthenticationEmail(SessionMultiFactorElevationRequest sessionMultiFactorElevationRequest) throws IOException {
-        UserIdentity userIdentity = sessionMultiFactorElevationRequest.getSession().getUserDevice().getUserIdentity();
+        sendMultiFactorAuthenticationEmailInternal(
+            sessionMultiFactorElevationRequest.getSession().getUserDevice().getUserIdentity(),
+            sessionMultiFactorElevationRequest.getRequestCode()
+        );
+    }
 
+    public void sendMultiFactorAuthenticationEmail(AuthenticationSessionMultiFactorElevationRequest authenticationSessionMultiFactorElevationRequest) throws IOException {
+        sendMultiFactorAuthenticationEmailInternal(
+            authenticationSessionMultiFactorElevationRequest.getAuthenticationSession().getUserAuthentication().getUserIdentity(),
+            authenticationSessionMultiFactorElevationRequest.getRequestCode()
+        );
+    }
+
+    private void sendMultiFactorAuthenticationEmailInternal(UserIdentity userIdentity, String authenticationCode) throws IOException {
         Email toEmail = new Email();
         toEmail.setEmail(userIdentity.getEmailAddress());
         toEmail.setName(String.format("%s %s", userIdentity.getFirstName(), userIdentity.getLastName()));
@@ -106,8 +119,7 @@ public class EmailSendingEngine {
 
         personalization.addDynamicTemplateData("firstName", userIdentity.getFirstName());
         personalization.addDynamicTemplateData("lastName", userIdentity.getLastName());
-        personalization.addDynamicTemplateData("authenticationCode",
-            sessionMultiFactorElevationRequest.getRequestCode());
+        personalization.addDynamicTemplateData("authenticationCode", authenticationCode);
 
         Mail mail = new Mail();
         mail.setFrom(FROM_EMAIL);

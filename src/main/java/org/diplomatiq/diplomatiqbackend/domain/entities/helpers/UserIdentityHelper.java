@@ -22,7 +22,7 @@ public class UserIdentityHelper {
     @Autowired
     UserDeviceHelper userDeviceHelper;
 
-    public UserIdentity createUserIdentity(String emailAddress, String firstName, String lastName) {
+    public UserIdentity create(String emailAddress, String firstName, String lastName) {
         UserIdentity userIdentity = new UserIdentity();
 
         userIdentity.setEmailAddress(emailAddress);

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class UserDeviceHelper {
-    public UserDevice createUserDevice() {
+    public UserDevice create() {
         UserDevice userDevice = new UserDevice();
 
         userDevice.setDeviceKey(DeviceKeyGenerator.generate());

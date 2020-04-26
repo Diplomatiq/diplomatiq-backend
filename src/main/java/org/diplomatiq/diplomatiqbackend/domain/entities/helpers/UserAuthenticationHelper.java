@@ -15,8 +15,8 @@ public class UserAuthenticationHelper {
     @Autowired
     private UserIdentityHelper userIdentityHelper;
 
-    public UserAuthentication createUserAuthentication(UserIdentity userIdentity, byte[] srpSalt, byte[] srpVerifier,
-                                                       PasswordStretchingAlgorithm passwordStretchingAlgorithm) {
+    public UserAuthentication create(UserIdentity userIdentity, byte[] srpSalt, byte[] srpVerifier,
+                                     PasswordStretchingAlgorithm passwordStretchingAlgorithm) {
         UserAuthentication userAuthentication = new UserAuthentication();
 
         userAuthentication.setVersion(userIdentityHelper.getNextAuthenticationVersion(userIdentity));

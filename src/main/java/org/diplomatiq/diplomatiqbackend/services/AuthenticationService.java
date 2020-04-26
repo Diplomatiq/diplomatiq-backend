@@ -83,8 +83,11 @@ public class AuthenticationService {
     @Autowired
     private SessionMultiFactorElevationRequestHelper sessionMultiFactorElevationRequestHelper;
 
+    @Autowired
+    private AuthenticationSessionMultiFactorElevationRequestHelper authenticationSessionMultiFactorElevationRequestHelper;
+
     public byte[] getDeviceContainerKeyV1(String deviceId) {
-        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElse(userDeviceHelper.createUserDevice());
+        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElse(userDeviceHelper.create());
         return userDevice.getDeviceContainerKey();
     }
 
@@ -130,7 +133,7 @@ public class AuthenticationService {
             throw new UnauthorizedException("Session token and device are unrelated.");
         }
 
-        Session newSession = SessionHelper.createSession();
+        Session newSession = SessionHelper.create();
         byte[] sessionIdBytes = newSession.getId().getBytes(StandardCharsets.UTF_8);
         DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
         byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
@@ -151,7 +154,7 @@ public class AuthenticationService {
 
         UserIdentity userIdentity = authenticationSession.getUserAuthentication().getUserIdentity();
 
-        UserDevice userDevice = userDeviceHelper.createUserDevice();
+        UserDevice userDevice = userDeviceHelper.create();
         userIdentity.getDevices().add(userDevice);
 
         userIdentityRepository.save(userIdentity);
@@ -194,11 +197,11 @@ public class AuthenticationService {
         if (existingUser) {
             userIdentity = userIdentityOptional.get();
         } else {
-            userIdentity = userIdentityHelper.createUserIdentity(emailAddress, "", "");
+            userIdentity = userIdentityHelper.create(emailAddress, "", "");
             byte[] salt = RandomUtils.bytes(32);
             byte[] verifier = RandomUtils.bytes(1024);
             PasswordStretchingAlgorithm passwordStretchingAlgorithm = passwordStretchingEngine.getLatestAlgorithm();
-            UserAuthentication userAuthentication = userAuthenticationHelper.createUserAuthentication(userIdentity,
+            UserAuthentication userAuthentication = userAuthenticationHelper.create(userIdentity,
                 salt, verifier, passwordStretchingAlgorithm);
             userIdentity.setAuthentications(Set.of(userAuthentication));
         }
@@ -315,7 +318,7 @@ public class AuthenticationService {
 
         byte[] authenticationSessionKeyBytes = authenticationSessionKeyBigInteger.toByteArray();
         AuthenticationSession authenticationSession =
-            AuthenticationSessionHelper.createAuthenticationSessionWithKey(authenticationSessionKeyBytes);
+            AuthenticationSessionHelper.create(authenticationSessionKeyBytes);
         currentAuthentication.getAuthenticationSessions().add(authenticationSession);
 
         userIdentityRepository.save(userIdentity);
@@ -324,6 +327,35 @@ public class AuthenticationService {
         String authenticationSessionId = authenticationSession.getId();
 
         return new PasswordAuthenticationCompleteV1Response(serverProofBase64, authenticationSessionId);
+    }
+
+    public void elevateAuthenticationSessionInitV1() throws IOException {
+        AuthenticationSession authenticationSession = authenticationSessionRepository
+            .findById(getCurrentAuthenticationDetails().getAuthenticationId())
+            .orElseThrow();
+
+        AuthenticationSessionMultiFactorElevationRequest elevationRequest =
+            authenticationSessionMultiFactorElevationRequestHelper.create();
+        authenticationSession.getAuthenticationSessionMultiFactorElevationRequests().add(elevationRequest);
+        authenticationSessionRepository.save(authenticationSession);
+
+        emailSendingEngine.sendMultiFactorAuthenticationEmail(elevationRequest);
+    }
+
+    public void elevateAuthenticationSessionCompleteV1(ElevateAuthenticationSessionCompleteV1Request request) {
+        String authenticationCode = request.getRequestCode();
+
+        AuthenticationSession authenticationSession = authenticationSessionRepository
+            .findById(getCurrentAuthenticationDetails().getAuthenticationId())
+            .orElseThrow();
+        boolean authenticationCodeFound = authenticationSession.getAuthenticationSessionMultiFactorElevationRequests()
+            .removeIf(r -> r.getRequestCode().equals(authenticationCode));
+        if (!authenticationCodeFound) {
+            throw new UnauthorizedException("Authentication code not found.");
+        }
+
+        AuthenticationSessionHelper.elevateAuthenticationSession(authenticationSession);
+        authenticationSessionRepository.save(authenticationSession);
     }
 
     public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
@@ -433,8 +465,8 @@ public class AuthenticationService {
         emailSendingEngine.sendMultiFactorAuthenticationEmail(elevationRequest);
     }
 
-    public void elevatePasswordElevatedSessionCompleteV1(ElevatePasswordElevatedSessionCompleteV1Request requestV1) {
-        String authenticationCode = requestV1.getRequestCode();
+    public void elevatePasswordElevatedSessionCompleteV1(ElevatePasswordElevatedSessionCompleteV1Request request) {
+        String authenticationCode = request.getRequestCode();
 
         Session session = sessionRepository.findById(getCurrentAuthenticationDetails().getAuthenticationId())
             .orElseThrow();
@@ -498,7 +530,7 @@ public class AuthenticationService {
             }
 
             UserIdentity userIdentity = userAuthenticationResetRequest.getUserAuthentication().getUserIdentity();
-            UserAuthentication userAuthentication = userAuthenticationHelper.createUserAuthentication(userIdentity,
+            UserAuthentication userAuthentication = userAuthenticationHelper.create(userIdentity,
                 srpSalt, srpVerifier, request.getPasswordStretchingAlgorithm());
             userIdentity.getAuthentications().add(userAuthentication);
 

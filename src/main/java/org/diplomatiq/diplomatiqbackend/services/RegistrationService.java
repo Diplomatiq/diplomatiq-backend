@@ -52,11 +52,11 @@ public class RegistrationService {
             return;
         }
 
-        UserIdentity userIdentity = userIdentityHelper.createUserIdentity(emailAddress,
+        UserIdentity userIdentity = userIdentityHelper.create(emailAddress,
             request.getFirstName(), request.getLastName());
 
         UserAuthentication userAuthentication =
-            userAuthenticationHelper.createUserAuthentication(userIdentity, srpSalt, srpVerifier,
+            userAuthenticationHelper.create(userIdentity, srpSalt, srpVerifier,
                 request.getPasswordStretchingAlgorithm());
 
         userIdentity.setAuthentications(Set.of(userAuthentication));

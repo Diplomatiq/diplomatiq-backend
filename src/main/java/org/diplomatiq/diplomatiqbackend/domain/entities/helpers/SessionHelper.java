@@ -15,7 +15,7 @@ public class SessionHelper {
     private static final Duration PASSWORD_ELEVATED_LEVEL_VALIDITY = Duration.ofMinutes(10);
     private static final Duration MULTI_FACTOR_ELEVATED_LEVEL_VALIDITY = Duration.ofMinutes(5);
 
-    public static Session createSession() {
+    public static Session create() {
         Session session = new Session();
         ExpirationUtils.setExpirationLifeSpan(session, SESSION_VALIDITY);
         session.setAssuranceLevel(SessionAssuranceLevel.RegularSession);
