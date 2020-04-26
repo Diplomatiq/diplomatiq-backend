@@ -10,7 +10,6 @@ import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.Passwo
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
 import org.diplomatiq.diplomatiqbackend.engines.mail.EmailSendingEngine;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
-import org.diplomatiq.diplomatiqbackend.exceptions.internal.ExpiredException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.InternalServerError;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationDetails;
@@ -563,7 +562,7 @@ public class AuthenticationService {
             authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
 
         if (ExpirationUtils.isExpiredNow(authenticationSession)) {
-            throw new ExpiredException("Authentication session expired.");
+            throw new UnauthorizedException("Authentication session expired.");
         }
 
         return authenticationSession.getUserAuthentication().getUserIdentity();
@@ -583,7 +582,7 @@ public class AuthenticationService {
         }
 
         if (ExpirationUtils.isExpiredNow(session)) {
-            throw new ExpiredException("Session expired.");
+            throw new UnauthorizedException("Session expired.");
         }
 
         return userDevice.getUserIdentity();

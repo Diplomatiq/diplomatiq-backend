@@ -50,7 +50,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleDiplomatiqApiError(apiError);
     }
 
-    @ExceptionHandler({ ExpiredException.class, UnauthorizedException.class })
+    @ExceptionHandler({ UnauthorizedException.class })
     public ResponseEntity<Object> handleUnauthorizedException(UnauthorizedException exception, WebRequest request) {
         DiplomatiqApiError apiError =
             new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.Unauthorized, exception);
