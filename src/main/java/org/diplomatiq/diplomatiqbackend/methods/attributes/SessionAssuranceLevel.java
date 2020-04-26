@@ -1,13 +1,13 @@
-package org.diplomatiq.diplomatiqbackend.methods.descriptors;
+package org.diplomatiq.diplomatiqbackend.methods.attributes;
 
-public enum SessionLevelOfAssurance {
+public enum SessionAssuranceLevel {
     RegularSession(1),
     PasswordElevatedSession(2),
     MultiFactorElevatedSession(3);
 
     private final int numericAssuranceLevel;
 
-    SessionLevelOfAssurance(int numericAssuranceLevel) {
+    SessionAssuranceLevel(int numericAssuranceLevel) {
         this.numericAssuranceLevel = numericAssuranceLevel;
     }
 

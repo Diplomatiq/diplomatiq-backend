@@ -15,6 +15,7 @@ import org.diplomatiq.diplomatiqbackend.exceptions.internal.InternalServerError;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationDetails;
 import org.diplomatiq.diplomatiqbackend.filters.authentication.AuthenticationToken;
+import org.diplomatiq.diplomatiqbackend.methods.attributes.SessionAssuranceLevel;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.*;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.*;
 import org.diplomatiq.diplomatiqbackend.repositories.*;
@@ -38,6 +39,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.Set;
@@ -528,6 +530,23 @@ public class AuthenticationService {
         }
 
         return userDevice.getUserIdentity();
+    }
+
+    public boolean hasSessionAssuranceLevel(String sessionId, SessionAssuranceLevel requiredAssuranceLevel) {
+        Session session = sessionRepository.findById(sessionId)
+            .orElseThrow(() -> new UnauthorizedException("No session found with the given ID."));
+
+        if (session.getAssuranceLevel().getNumericAssuranceLevel() < requiredAssuranceLevel.getNumericAssuranceLevel()) {
+            return false;
+        }
+
+        if (session.getAssuranceLevelExpirationTime().isBefore(Instant.now())) {
+            SessionHelper.downgradeSessionToRegular(session);
+            sessionRepository.save(session);
+            return false;
+        }
+
+        return true;
     }
 
     private AuthenticationToken getCurrentAuthenticatedAuthenticationToken() {

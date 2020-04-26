@@ -1,7 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractExpiringNodeEntity;
-import org.diplomatiq.diplomatiqbackend.methods.descriptors.SessionLevelOfAssurance;
+import org.diplomatiq.diplomatiqbackend.methods.attributes.SessionAssuranceLevel;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
@@ -9,26 +9,26 @@ import java.time.Instant;
 
 @NodeEntity
 public class Session extends AbstractExpiringNodeEntity {
-    SessionLevelOfAssurance levelOfAssurance;
-    Instant levelOfAssuranceExpirationTime;
+    SessionAssuranceLevel assuranceLevel;
+    Instant assuranceLevelExpirationTime;
 
     @Relationship(type = "HAS_SESSION", direction = Relationship.INCOMING)
     private UserDevice userDevice;
 
-    public SessionLevelOfAssurance getLevelOfAssurance() {
-        return levelOfAssurance;
+    public SessionAssuranceLevel getAssuranceLevel() {
+        return assuranceLevel;
     }
 
-    public void setLevelOfAssurance(SessionLevelOfAssurance levelOfAssurance) {
-        this.levelOfAssurance = levelOfAssurance;
+    public void setAssuranceLevel(SessionAssuranceLevel assuranceLevel) {
+        this.assuranceLevel = assuranceLevel;
     }
 
-    public Instant getLevelOfAssuranceExpirationTime() {
-        return levelOfAssuranceExpirationTime;
+    public Instant getAssuranceLevelExpirationTime() {
+        return assuranceLevelExpirationTime;
     }
 
-    public void setLevelOfAssuranceExpirationTime(Instant levelOfAssuranceExpirationTime) {
-        this.levelOfAssuranceExpirationTime = levelOfAssuranceExpirationTime;
+    public void setAssuranceLevelExpirationTime(Instant assuranceLevelExpirationTime) {
+        this.assuranceLevelExpirationTime = assuranceLevelExpirationTime;
     }
 
     public UserDevice getUserDevice() {

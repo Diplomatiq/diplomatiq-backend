@@ -1,6 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.diplomatiq.diplomatiqbackend.access.ControllerSecurityExpressionHandler;
 import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqMethods;
@@ -12,6 +13,9 @@ import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -186,8 +190,10 @@ public class SecurityConfiguration {
 
             RequestMatcher everyFilterRequestMatcher =
                 httpServletRequest -> !NO_FILTER_PATHS.contains(httpServletRequest.getServletPath());
-            http.addFilterAfter(new RequestCheckerFilter(objectMapper, everyFilterRequestMatcher, globalExceptionHandler), LogoutFilter.class);
-            http.addFilterAfter(new ClockDiscrepancyFilter(objectMapper, everyFilterRequestMatcher, globalExceptionHandler),
+            http.addFilterAfter(new RequestCheckerFilter(objectMapper, everyFilterRequestMatcher,
+                globalExceptionHandler), LogoutFilter.class);
+            http.addFilterAfter(new ClockDiscrepancyFilter(objectMapper, everyFilterRequestMatcher,
+                    globalExceptionHandler),
                 RequestCheckerFilter.class);
 
             RequestMatcher authFilterRequestMatcher =
@@ -206,6 +212,18 @@ public class SecurityConfiguration {
             http.logout().disable();
             http.rememberMe().disable();
             http.requestCache().disable();
+        }
+    }
+
+    @Configuration
+    @EnableGlobalMethodSecurity(prePostEnabled = true)
+    public static class MethodSecurityConfiguration extends GlobalMethodSecurityConfiguration {
+        @Autowired
+        private AuthenticationService authenticationService;
+
+        @Override
+        protected MethodSecurityExpressionHandler createExpressionHandler() {
+            return new ControllerSecurityExpressionHandler(authenticationService);
         }
     }
 }

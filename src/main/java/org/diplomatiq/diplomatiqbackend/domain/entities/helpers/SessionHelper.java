@@ -2,7 +2,7 @@ package org.diplomatiq.diplomatiqbackend.domain.entities.helpers;
 
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.Session;
 import org.diplomatiq.diplomatiqbackend.domain.entities.utils.ExpirationUtils;
-import org.diplomatiq.diplomatiqbackend.methods.descriptors.SessionLevelOfAssurance;
+import org.diplomatiq.diplomatiqbackend.methods.attributes.SessionAssuranceLevel;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -18,34 +18,40 @@ public class SessionHelper {
     public static Session createSession() {
         Session session = new Session();
         ExpirationUtils.setExpirationLifeSpan(session, SESSION_VALIDITY);
-        session.setLevelOfAssurance(SessionLevelOfAssurance.RegularSession);
-        session.setLevelOfAssuranceExpirationTime(session.getExpirationTime());
+        session.setAssuranceLevel(SessionAssuranceLevel.RegularSession);
+        session.setAssuranceLevelExpirationTime(session.getExpirationTime());
         return session;
     }
 
     public static Session elevateSessionToPasswordElevated(Session session) {
-        session.setLevelOfAssurance(SessionLevelOfAssurance.PasswordElevatedSession);
+        session.setAssuranceLevel(SessionAssuranceLevel.PasswordElevatedSession);
 
         Instant loaMaxExpirationTime = Instant.now().plus(PASSWORD_ELEVATED_LEVEL_VALIDITY);
         Instant sessionExpirationTime = session.getExpirationTime();
 
         Instant loaExpirationTime =
             Stream.of(loaMaxExpirationTime, sessionExpirationTime).min(Instant::compareTo).get();
-        session.setLevelOfAssuranceExpirationTime(loaExpirationTime);
+        session.setAssuranceLevelExpirationTime(loaExpirationTime);
 
         return session;
     }
 
     public static Session elevateSessionToMultiFactorElevated(Session session) {
-        session.setLevelOfAssurance(SessionLevelOfAssurance.MultiFactorElevatedSession);
+        session.setAssuranceLevel(SessionAssuranceLevel.MultiFactorElevatedSession);
 
         Instant loaMaxExpirationTime = Instant.now().plus(MULTI_FACTOR_ELEVATED_LEVEL_VALIDITY);
         Instant sessionExpirationTime = session.getExpirationTime();
 
         Instant loaExpirationTime =
             Stream.of(loaMaxExpirationTime, sessionExpirationTime).min(Instant::compareTo).get();
-        session.setLevelOfAssuranceExpirationTime(loaExpirationTime);
+        session.setAssuranceLevelExpirationTime(loaExpirationTime);
 
+        return session;
+    }
+
+    public static Session downgradeSessionToRegular(Session session) {
+        session.setAssuranceLevel(SessionAssuranceLevel.RegularSession);
+        session.setAssuranceLevelExpirationTime(session.getExpirationTime());
         return session;
     }
 }

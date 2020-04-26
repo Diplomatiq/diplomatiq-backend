@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Session methods - PasswordElevatedSession", description = "These methods are available with a valid " +
@@ -38,5 +39,6 @@ import org.springframework.web.bind.annotation.RestController;
     @SecurityRequirement(name = "SignedHeaders"),
 })
 @RestController
+@PreAuthorize("hasSessionAssuranceLevel('PasswordElevatedSession')")
 public class PasswordElevatedSessionMethods {
 }
