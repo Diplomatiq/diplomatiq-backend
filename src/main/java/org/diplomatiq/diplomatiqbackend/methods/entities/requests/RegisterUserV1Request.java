@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 
 import javax.validation.constraints.Email;
-import javax.validation.constraints.Max;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 public class RegisterUserV1Request {
     @Schema(
@@ -20,15 +20,14 @@ public class RegisterUserV1Request {
         description = "The first name(s) of the user",
         example = "Sam"
     )
-    @NotBlank
-    @Max(200)
+    @Size(min = 1, max = 200)
     private String firstName;
 
     @Schema(
         description = "The last name(s) of the user",
         example = "Sepiol"
     )
-    @Max(200)
+    @Size(min = 1, max = 200)
     @NotBlank
     private String lastName;
 
@@ -49,9 +48,9 @@ public class RegisterUserV1Request {
 
     @Schema(
         description = "The hash function used for calculating the exponent of the SRP verifier (v)",
-        example = "Argon2_v1"
+        example = "Argon2_v1",
+        required = true
     )
-    @NotBlank
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
 
     public String getEmailAddress() {

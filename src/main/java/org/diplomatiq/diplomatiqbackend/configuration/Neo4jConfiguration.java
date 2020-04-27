@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableNeo4jRepositories("org.diplomatiq.diplomatiqbackend.repositories")
 @EnableTransactionManagement
+//@Profile("production")
 public class Neo4jConfiguration {
     @Value("${neo4j.uri}")
     private String uri;
@@ -26,7 +27,7 @@ public class Neo4jConfiguration {
 
     @Bean
     public SessionFactory sessionFactory() {
-        return new SessionFactory(configuration(), "org.diplomatiq.diplomatiqbackend.domain.entities.concretes");
+        return new SessionFactory(configuration(), "org.diplomatiq.diplomatiqbackend.domain.entities");
     }
 
     @Bean

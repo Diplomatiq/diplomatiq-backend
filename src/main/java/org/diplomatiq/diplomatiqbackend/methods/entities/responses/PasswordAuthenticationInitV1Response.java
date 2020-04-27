@@ -30,7 +30,7 @@ public class PasswordAuthenticationInitV1Response {
 
     public PasswordAuthenticationInitV1Response(@NotBlank String serverEphemeralBase64,
                                                 @NotBlank String srpSaltBase64,
-                                                @NotBlank PasswordStretchingAlgorithm passwordStretchingAlgorithm) {
+                                                PasswordStretchingAlgorithm passwordStretchingAlgorithm) {
         this.serverEphemeralBase64 = serverEphemeralBase64;
         this.srpSaltBase64 = srpSaltBase64;
         this.passwordStretchingAlgorithm = passwordStretchingAlgorithm;
