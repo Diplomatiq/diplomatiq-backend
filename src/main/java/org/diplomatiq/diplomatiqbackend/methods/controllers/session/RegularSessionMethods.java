@@ -56,21 +56,6 @@ public class RegularSessionMethods {
     private AuthenticationService authenticationService;
 
     @Operation(
-        summary = "Initiate session elevation to PasswordElevatedSession assurance level",
-        description = "Initiates the authentication flow for the current user, based on the Secure Remote Password " +
-            "protocol (version 6a)."
-    )
-    @RequestMapping(
-        name = "elevateRegularSessionInitV1",
-        path = "elevate-regular-session-init-v1",
-        method = RequestMethod.POST,
-        produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
-        return authenticationService.elevateRegularSessionInitV1();
-    }
-
-    @Operation(
         summary = "Complete session elevation to PasswordElevatedSession assurance level",
         description = "Completes an authentication flow for the given email address, based on the Secure Remote " +
             "Password protocol (version 6a). If successful, the current session was elevated to `PasswordElevatedSession` " +
@@ -88,6 +73,21 @@ public class RegularSessionMethods {
         @RequestBody
             ElevateRegularSessionCompleteV1Request request) {
         authenticationService.elevateRegularSessionCompleteV1(request);
+    }
+
+    @Operation(
+        summary = "Initiate session elevation to PasswordElevatedSession assurance level",
+        description = "Initiates the authentication flow for the current user, based on the Secure Remote Password " +
+            "protocol (version 6a)."
+    )
+    @RequestMapping(
+        name = "elevateRegularSessionInitV1",
+        path = "elevate-regular-session-init-v1",
+        method = RequestMethod.POST,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
+        return authenticationService.elevateRegularSessionInitV1();
     }
 
     @Operation(

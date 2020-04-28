@@ -1,6 +1,6 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
-import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedBytesConverter;
+import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedStringConverter;
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractCreationRecordedNodeEntity;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.neo4j.ogm.annotation.NodeEntity;
@@ -14,11 +14,11 @@ import java.util.Set;
 public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
     private long version;
 
-    @Convert(EncryptedBytesConverter.class)
-    private byte[] srpSalt;
+    @Convert(EncryptedStringConverter.class)
+    private String srpSaltHex;
 
-    @Convert(EncryptedBytesConverter.class)
-    private byte[] srpVerifier;
+    @Convert(EncryptedStringConverter.class)
+    private String srpVerifierHex;
 
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
 
@@ -42,20 +42,20 @@ public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
         this.version = version;
     }
 
-    public byte[] getSrpSalt() {
-        return srpSalt;
+    public String getSrpSaltHex() {
+        return srpSaltHex;
     }
 
-    public void setSrpSalt(byte[] srpSalt) {
-        this.srpSalt = srpSalt;
+    public void setSrpSaltHex(String srpSaltHex) {
+        this.srpSaltHex = srpSaltHex;
     }
 
-    public byte[] getSrpVerifier() {
-        return srpVerifier;
+    public String getSrpVerifierHex() {
+        return srpVerifierHex;
     }
 
-    public void setSrpVerifier(byte[] srpVerifier) {
-        this.srpVerifier = srpVerifier;
+    public void setSrpVerifierHex(String srpVerifierHex) {
+        this.srpVerifierHex = srpVerifierHex;
     }
 
     public PasswordStretchingAlgorithm getPasswordStretchingAlgorithm() {

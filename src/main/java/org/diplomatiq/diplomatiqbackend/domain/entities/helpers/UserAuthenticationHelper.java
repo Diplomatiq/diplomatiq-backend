@@ -15,13 +15,13 @@ public class UserAuthenticationHelper {
     @Autowired
     private UserIdentityHelper userIdentityHelper;
 
-    public UserAuthentication create(UserIdentity userIdentity, byte[] srpSalt, byte[] srpVerifier,
+    public UserAuthentication create(UserIdentity userIdentity, String srpSaltHex, String srpVerifierHex,
                                      PasswordStretchingAlgorithm passwordStretchingAlgorithm) {
         UserAuthentication userAuthentication = new UserAuthentication();
 
         userAuthentication.setVersion(userIdentityHelper.getNextAuthenticationVersion(userIdentity));
-        userAuthentication.setSrpSalt(srpSalt);
-        userAuthentication.setSrpVerifier(srpVerifier);
+        userAuthentication.setSrpSaltHex(srpSaltHex);
+        userAuthentication.setSrpVerifierHex(srpVerifierHex);
         userAuthentication.setPasswordStretchingAlgorithm(passwordStretchingAlgorithm);
 
         return userAuthentication;

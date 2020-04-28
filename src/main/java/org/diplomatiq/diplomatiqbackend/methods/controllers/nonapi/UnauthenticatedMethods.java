@@ -17,9 +17,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 @Tag(name = "Unauthenticated methods", description = "These methods are available without authentication and request " +
@@ -87,7 +92,7 @@ public class UnauthenticatedMethods {
         @Valid
         @RequestBody
             PasswordAuthenticationCompleteV1Request request
-    ) {
+    ) throws NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException, IOException {
         return authenticationService.passwordAuthenticationCompleteV1(request);
     }
 

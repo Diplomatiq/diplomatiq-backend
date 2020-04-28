@@ -39,7 +39,6 @@ public class RequestCheckerFilter extends RequestMatchingFilter {
         String instantHeader = request.getHeader(DiplomatiqHeaders.KnownHeader.Instant.name());
 
         if (!DiplomatiqMethods.AllowedMethods.contains(requestMethod)) {
-            System.out.println(requestMethod);
             ResponseEntity<Object> responseEntity = globalExceptionHandler.handleMethodNotAllowedException(
                 new MethodNotAllowedException(requestMethod),
                 new ServletWebRequest(request)

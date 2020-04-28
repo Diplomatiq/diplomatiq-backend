@@ -1,23 +1,36 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
-import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedBytesConverter;
+import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedStringConverter;
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractExpiringNodeEntity;
+import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
 
+@NodeEntity
 public class UserTemporarySRPData extends AbstractExpiringNodeEntity {
-    @Convert(EncryptedBytesConverter.class)
-    private byte[] serverEphemeral;
+    @Convert(EncryptedStringConverter.class)
+    private String serverEphemeralHex;
+
+    @Convert(EncryptedStringConverter.class)
+    private String serverSecretHex;
 
     @Relationship(type = "IS_CURRENTLY_AUTHENTICATING_WITH_SRP_DATA", direction = Relationship.INCOMING)
     private UserAuthentication userAuthentication;
 
-    public byte[] getServerEphemeral() {
-        return serverEphemeral;
+    public String getServerEphemeralHex() {
+        return serverEphemeralHex;
     }
 
-    public void setServerEphemeral(byte[] serverEphemeral) {
-        this.serverEphemeral = serverEphemeral;
+    public void setServerEphemeralHex(String serverEphemeralHex) {
+        this.serverEphemeralHex = serverEphemeralHex;
+    }
+
+    public String getServerSecretHex() {
+        return serverSecretHex;
+    }
+
+    public void setServerSecretHex(String serverSecretHex) {
+        this.serverSecretHex = serverSecretHex;
     }
 
     public UserAuthentication getUserAuthentication() {

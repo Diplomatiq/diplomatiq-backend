@@ -10,10 +10,11 @@ import java.time.Duration;
 public class UserTemporarySRPDataHelper {
     private static final Duration USER_TEMPORARY_SRP_DATA_VALIDITY = Duration.ofMinutes(2);
 
-    public static UserTemporarySRPData create(byte[] serverEphemeral) {
+    public static UserTemporarySRPData create(String serverEphemeralHex, String serverSecretHex) {
         UserTemporarySRPData userTemporarySRPData = new UserTemporarySRPData();
         ExpirationUtils.setExpirationLifeSpan(userTemporarySRPData, USER_TEMPORARY_SRP_DATA_VALIDITY);
-        userTemporarySRPData.setServerEphemeral(serverEphemeral);
+        userTemporarySRPData.setServerEphemeralHex(serverEphemeralHex);
+        userTemporarySRPData.setServerSecretHex(serverSecretHex);
         return userTemporarySRPData;
     }
 }

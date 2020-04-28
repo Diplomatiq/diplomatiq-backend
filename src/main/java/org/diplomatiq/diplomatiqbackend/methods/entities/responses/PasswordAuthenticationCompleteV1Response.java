@@ -6,11 +6,11 @@ import javax.validation.constraints.NotBlank;
 
 public class PasswordAuthenticationCompleteV1Response {
     @Schema(
-        description = "The SRP server proof (M2) as a Base64 string",
-        example = "k37idS0tChjuoufUxaoN0N9Ulw9MmfwTx1xds7ukVkM="
+        description = "The SRP server proof (M2) as a Hex string",
+        example = "1a91ee53dd8286ba1e83d7f5d554da84a2be089d04ac698a4922fe4e2df3b853"
     )
     @NotBlank
-    private String serverProofBase64;
+    private String serverProofHex;
 
     @Schema(
         description = "The ID of the created authentication session as UTF-8 bytes, encrypted with the SRP session " +
@@ -23,14 +23,14 @@ public class PasswordAuthenticationCompleteV1Response {
     @NotBlank
     private String authenticationSessionIdAeadBase64;
 
-    public PasswordAuthenticationCompleteV1Response(@NotBlank String serverProofBase64,
+    public PasswordAuthenticationCompleteV1Response(@NotBlank String serverProofHex,
                                                     @NotBlank String authenticationSessionIdAeadBase64) {
-        this.serverProofBase64 = serverProofBase64;
+        this.serverProofHex = serverProofHex;
         this.authenticationSessionIdAeadBase64 = authenticationSessionIdAeadBase64;
     }
 
-    public String getServerProofBase64() {
-        return serverProofBase64;
+    public String getServerProofHex() {
+        return serverProofHex;
     }
 
     public String getAuthenticationSessionIdAeadBase64() {

@@ -4,12 +4,14 @@ import org.diplomatiq.diplomatiqbackend.exceptions.internal.GraphPropertyCryptoE
 import org.diplomatiq.diplomatiqbackend.utils.crypto.aead.DiplomatiqAEAD;
 import org.neo4j.ogm.typeconversion.AttributeConverter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class EncryptedBytesConverter extends AbstractEncryptedConverter implements AttributeConverter<byte[], String> {
+public class EncryptedStringConverter extends AbstractEncryptedConverter implements AttributeConverter<String, String> {
     @Override
-    public String toGraphProperty(byte[] bytes) {
+    public String toGraphProperty(String s) {
         try {
+            byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             DiplomatiqAEAD diplomatiqAEAD = new DiplomatiqAEAD(bytes);
             byte[] encrypted = diplomatiqAEAD.toBytes(getLatestKey());
             return Base64.getEncoder().encodeToString(encrypted);
@@ -19,12 +21,12 @@ public class EncryptedBytesConverter extends AbstractEncryptedConverter implemen
     }
 
     @Override
-    public byte[] toEntityAttribute(String s) {
+    public String toEntityAttribute(String s) {
         try {
             byte[] diplomatiqAEADBytes = Base64.getDecoder().decode(s);
             for (byte[] keyCandidate : getKeyByVersionMap().descendingMap().values()) {
                 DiplomatiqAEAD diplomatiqAEAD = DiplomatiqAEAD.fromBytes(diplomatiqAEADBytes, keyCandidate);
-                return diplomatiqAEAD.getPlaintext();
+                return new String(diplomatiqAEAD.getPlaintext(), StandardCharsets.UTF_8);
             }
         } catch (Throwable ex) {
             throw new GraphPropertyCryptoException("Could not decrypt graph property.", ex);

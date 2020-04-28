@@ -95,6 +95,10 @@ public class DiplomatiqAEAD {
         NoSuchPaddingException,
         NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException,
         IllegalBlockSizeException {
+        if (key.length != 32) {
+            throw new IllegalArgumentException("Key length must be 256 bits.");
+        }
+
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(diplomatiqAead);
 
         int initializationVectorLength = byteArrayInputStream.read();

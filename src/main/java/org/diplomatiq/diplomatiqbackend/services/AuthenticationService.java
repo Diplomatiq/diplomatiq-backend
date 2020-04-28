@@ -19,6 +19,7 @@ import org.diplomatiq.diplomatiqbackend.methods.entities.requests.*;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.*;
 import org.diplomatiq.diplomatiqbackend.repositories.*;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.aead.DiplomatiqAEAD;
+import org.diplomatiq.diplomatiqbackend.utils.crypto.convert.BigIntegerToByteArray;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.srp.RequestBoundaryCrossingSRP6Server;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -41,7 +41,6 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -54,6 +53,12 @@ public class AuthenticationService {
 
     @Autowired
     private UserIdentityRepository userIdentityRepository;
+
+    @Autowired
+    private UserTemporarySRPDataRepository userTemporarySRPDataRepository;
+
+    @Autowired
+    private UserAuthenticationRepository userAuthenticationRepository;
 
     @Autowired
     private UserDeviceRepository userDeviceRepository;
@@ -104,7 +109,7 @@ public class AuthenticationService {
 
         Session oldSession = userDevice.getSession();
         if (oldSession != null) {
-            if (ExpirationUtils.isExpiredIn(oldSession, Duration.ofMinutes(1))) {
+            if (!ExpirationUtils.isExpiredIn(oldSession, Duration.ofMinutes(1))) {
                 byte[] sessionIdBytes = oldSession.getId().getBytes(StandardCharsets.UTF_8);
                 DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
                 byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
@@ -149,9 +154,11 @@ public class AuthenticationService {
         IOException {
         String authenticationSessionId = getCurrentAuthenticationDetails().getAuthenticationId();
         AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
-            .orElseThrow(() -> new UnauthorizedException("Did not find authentication session with the supplied ID."));
-
-        UserIdentity userIdentity = authenticationSession.getUserAuthentication().getUserIdentity();
+            .orElseThrow();
+        UserAuthentication userAuthentication =
+            userAuthenticationRepository.findById(authenticationSession.getUserAuthentication().getId()).orElseThrow();
+        UserIdentity userIdentity =
+            userIdentityRepository.findById(userAuthentication.getUserIdentity().getId()).orElseThrow();
 
         UserDevice userDevice = userDeviceHelper.create();
         userIdentity.getDevices().add(userDevice);
@@ -159,7 +166,6 @@ public class AuthenticationService {
         userIdentityRepository.save(userIdentity);
 
         String deviceId = userDevice.getId();
-
         byte[] authenticationSessionKey = authenticationSession.getAuthenticationSessionKey();
 
         byte[] deviceKey = userDevice.getDeviceKey();
@@ -183,8 +189,6 @@ public class AuthenticationService {
 
         sessionRepository.delete(session);
         userDeviceRepository.delete(userDevice);
-
-        SecurityContextHolder.clearContext();
     }
 
     public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) throws NoSuchAlgorithmException {
@@ -197,58 +201,58 @@ public class AuthenticationService {
             userIdentity = userIdentityOptional.get();
         } else {
             userIdentity = userIdentityHelper.create(emailAddress, "", "");
-            byte[] salt = RandomUtils.bytes(32);
-            byte[] verifier = RandomUtils.bytes(1024);
+            String srpSaltHex = new BigInteger(1, RandomUtils.bytes(32)).toString(16);
+            String srpVerifierHex = new BigInteger(1, RandomUtils.bytes(1024)).toString(16);
             PasswordStretchingAlgorithm passwordStretchingAlgorithm = passwordStretchingEngine.getLatestAlgorithm();
             UserAuthentication userAuthentication = userAuthenticationHelper.create(userIdentity,
-                salt, verifier, passwordStretchingAlgorithm);
+                srpSaltHex, srpVerifierHex, passwordStretchingAlgorithm);
             userIdentity.setAuthentications(Set.of(userAuthentication));
         }
 
-        UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
+        UserAuthentication currentAuthentication;
+        if (existingUser) {
+            currentAuthentication =
+                userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
+                    .orElseThrow();
+        } else {
+            currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
+        }
 
-        byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
-        BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
+        BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
-        byte[] serverEphemeralBytes = serverEphemeralBigInteger.toByteArray();
-        String serverEphemeralBase64 = Base64.getEncoder().encodeToString(serverEphemeralBytes);
+        String serverEphemeralHex = serverEphemeralBigInteger.toString(16);
 
-        byte[] srpSaltBytes = currentAuthentication.getSrpSalt();
-        String srpSaltBase64 = Base64.getEncoder().encodeToString(srpSaltBytes);
+        BigInteger serverSecretBigInteger = srp.getb();
+        String serverSecretHex = serverSecretBigInteger.toString(16);
 
-        UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralBytes);
+        UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralHex,
+            serverSecretHex);
         currentAuthentication.getUserTemporarySrpDatas().add(userTemporarySRPData);
 
         if (existingUser) {
             userIdentityRepository.save(userIdentity);
         }
 
-        return new PasswordAuthenticationInitV1Response(serverEphemeralBase64, srpSaltBase64,
+        String srpSaltHex = currentAuthentication.getSrpSaltHex();
+        return new PasswordAuthenticationInitV1Response(serverEphemeralHex, srpSaltHex,
             currentAuthentication.getPasswordStretchingAlgorithm());
     }
 
-    public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) {
+    public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) throws NoSuchPaddingException, InvalidKeyException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, IOException {
         String emailAddress = request.getEmailAddress().toLowerCase();
-
-        byte[] serverEphemeralBytes;
-        try {
-            String serverEphemeralBase64 = request.getServerEphemeralBase64();
-            serverEphemeralBytes = Base64.getDecoder().decode(serverEphemeralBase64);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not decode server ephemeral.", ex);
-        }
 
         UserIdentity userIdentity = userIdentityRepository.findByEmailAddress(emailAddress)
             .orElseThrow(() -> new UnauthorizedException("UserIdentity not found."));
-        UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
+        UserAuthentication currentAuthentication =
+            userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
+                .orElseThrow();
 
-        byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
-        BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
+        BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
@@ -256,40 +260,34 @@ public class AuthenticationService {
 
         Set<UserTemporarySRPData> userTemporarySrpDatas = currentAuthentication.getUserTemporarySrpDatas();
         userTemporarySrpDatas.removeIf(ExpirationUtils::isExpiredNow);
-        boolean foundNonExpired = userTemporarySrpDatas.removeIf(d ->
-            Arrays.constantTimeAreEqual(d.getServerEphemeral(), serverEphemeralBytes));
 
-        if (!foundNonExpired) {
+        UserTemporarySRPData foundUserTemporarySrpData = null;
+        for (UserTemporarySRPData userTemporarySRPData : userTemporarySrpDatas) {
+            if (userTemporarySRPData.getServerEphemeralHex().equals(request.getServerEphemeralHex())) {
+                foundUserTemporarySrpData = userTemporarySRPData;
+                userTemporarySrpDatas.remove(userTemporarySRPData);
+                break;
+            }
+        }
+
+        if (foundUserTemporarySrpData == null) {
             throw new UnauthorizedException("Previous, still valid server ephemeral value not found.");
         }
 
-        BigInteger serverEphemeralBigInteger = new BigInteger(serverEphemeralBytes);
+        BigInteger serverSecretBigInteger = new BigInteger(foundUserTemporarySrpData.getServerSecretHex(), 16);
+        srp.setb(serverSecretBigInteger);
+
+        BigInteger serverEphemeralBigInteger = new BigInteger(foundUserTemporarySrpData.getServerEphemeralHex(), 16);
         srp.setB(serverEphemeralBigInteger);
 
-        BigInteger clientEphemeralBigInteger;
-        try {
-            String clientEphemeralBase64 = request.getClientEphemeralBase64();
-            byte[] clientEphemeralBytes = Base64.getDecoder().decode(clientEphemeralBase64);
-            clientEphemeralBigInteger = new BigInteger(clientEphemeralBytes);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not decode client ephemeral.", ex);
-        }
-
+        BigInteger clientEphemeralBigInteger = new BigInteger(request.getClientEphemeralHex(), 16);
         try {
             srp.calculateSecret(clientEphemeralBigInteger);
         } catch (Exception ex) {
             throw new UnauthorizedException("SRP secret could not be calculated.", ex);
         }
 
-        BigInteger clientProofBigInteger;
-        try {
-            String clientProofBase64 = request.getClientProofBase64();
-            byte[] clientProofBytes = Base64.getDecoder().decode(clientProofBase64);
-            clientProofBigInteger = new BigInteger(clientProofBytes);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not decode client proof.", ex);
-        }
-
+        BigInteger clientProofBigInteger = new BigInteger(request.getClientProofHex(), 16);
         boolean clientProofVerified;
         try {
             clientProofVerified = srp.verifyClientEvidenceMessage(clientProofBigInteger);
@@ -315,17 +313,22 @@ public class AuthenticationService {
             throw new UnauthorizedException("Session key could not be calculated.", ex);
         }
 
-        byte[] authenticationSessionKeyBytes = authenticationSessionKeyBigInteger.toByteArray();
+        byte[] authenticationSessionKeyBytes = BigIntegerToByteArray.convert(authenticationSessionKeyBigInteger);
         AuthenticationSession authenticationSession =
             AuthenticationSessionHelper.create(authenticationSessionKeyBytes);
         currentAuthentication.getAuthenticationSessions().add(authenticationSession);
 
         userIdentityRepository.save(userIdentity);
 
-        String serverProofBase64 = Base64.getEncoder().encodeToString(serverProofBigInteger.toByteArray());
-        String authenticationSessionId = authenticationSession.getId();
+        String serverProofHex = serverProofBigInteger.toString(16);
 
-        return new PasswordAuthenticationCompleteV1Response(serverProofBase64, authenticationSessionId);
+        String authenticationSessionId = authenticationSession.getId();
+        byte[] authenticationSessionIdBytes = authenticationSessionId.getBytes(StandardCharsets.UTF_8);
+        DiplomatiqAEAD authenticationSessionIdAead = new DiplomatiqAEAD(authenticationSessionIdBytes);
+        byte[] authenticationSessionIdAeadBytes = authenticationSessionIdAead.toBytes(authenticationSessionKeyBytes);
+        String authenticationSessionIdAeadBase64 = Base64.getEncoder().encodeToString(authenticationSessionIdAeadBytes);
+
+        return new PasswordAuthenticationCompleteV1Response(serverProofHex, authenticationSessionIdAeadBase64);
     }
 
     public void elevateAuthenticationSessionInitV1() throws IOException {
@@ -336,6 +339,7 @@ public class AuthenticationService {
         AuthenticationSessionMultiFactorElevationRequest elevationRequest =
             authenticationSessionMultiFactorElevationRequestHelper.create();
         authenticationSession.getAuthenticationSessionMultiFactorElevationRequests().add(elevationRequest);
+
         authenticationSessionRepository.save(authenticationSession);
 
         emailSendingEngine.sendMultiFactorAuthenticationEmail(elevationRequest);
@@ -347,7 +351,10 @@ public class AuthenticationService {
         AuthenticationSession authenticationSession = authenticationSessionRepository
             .findById(getCurrentAuthenticationDetails().getAuthenticationId())
             .orElseThrow();
-        boolean authenticationCodeFound = authenticationSession.getAuthenticationSessionMultiFactorElevationRequests()
+        Set<AuthenticationSessionMultiFactorElevationRequest> authenticationSessionMultiFactorElevationRequests =
+            authenticationSession.getAuthenticationSessionMultiFactorElevationRequests();
+        authenticationSessionMultiFactorElevationRequests.removeIf(ExpirationUtils::isExpiredNow);
+        boolean authenticationCodeFound = authenticationSessionMultiFactorElevationRequests
             .removeIf(r -> r.getRequestCode().equals(authenticationCode));
         if (!authenticationCodeFound) {
             throw new UnauthorizedException("Authentication code not found.");
@@ -359,83 +366,76 @@ public class AuthenticationService {
 
     public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
         UserIdentity userIdentity = getCurrentUserIdentity();
-        UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
+        UserAuthentication currentAuthentication =
+            userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
+                .orElseThrow();
 
-        byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
-        BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
+        BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
-        byte[] serverEphemeralBytes = serverEphemeralBigInteger.toByteArray();
-        String serverEphemeralBase64 = Base64.getEncoder().encodeToString(serverEphemeralBytes);
+        String serverEphemeralHex = serverEphemeralBigInteger.toString(16);
 
-        byte[] srpSaltBytes = currentAuthentication.getSrpSalt();
-        String srpSaltBase64 = Base64.getEncoder().encodeToString(srpSaltBytes);
+        BigInteger serverSecretBigInteger = srp.getb();
+        String serverSecretHex = serverSecretBigInteger.toString(16);
 
-        UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralBytes);
+        UserTemporarySRPData userTemporarySRPData = UserTemporarySRPDataHelper.create(serverEphemeralHex,
+            serverSecretHex);
         currentAuthentication.getUserTemporarySrpDatas().add(userTemporarySRPData);
 
         userIdentityRepository.save(userIdentity);
 
-        return new ElevateRegularSessionInitV1Response(serverEphemeralBase64, srpSaltBase64);
+        String srpSaltHex = currentAuthentication.getSrpSaltHex();
+        return new ElevateRegularSessionInitV1Response(serverEphemeralHex, srpSaltHex);
     }
 
     public void elevateRegularSessionCompleteV1(ElevateRegularSessionCompleteV1Request request) {
         UserIdentity userIdentity = getCurrentUserIdentity();
-        UserAuthentication currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
+        UserAuthentication currentAuthentication =
+            userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
+                .orElseThrow();
 
-        byte[] serverEphemeralBytes;
-        try {
-            String serverEphemeralBase64 = request.getServerEphemeralBase64();
-            serverEphemeralBytes = Base64.getDecoder().decode(serverEphemeralBase64);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not decode server ephemeral.", ex);
-        }
-
-        byte[] srpVerifierBytes = currentAuthentication.getSrpVerifier();
-        BigInteger srpVerifierBigInteger = new BigInteger(srpVerifierBytes);
+        BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
         RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
         srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
             RandomUtils.getStrongSecureRandom());
 
-        Set<ByteBuffer> savedServerEphemerals = currentAuthentication.getUserTemporarySrpDatas().stream()
-            .map(d -> ByteBuffer.wrap(d.getServerEphemeral()))
-            .collect(Collectors.toSet());
-        if (!savedServerEphemerals.contains(ByteBuffer.wrap(serverEphemeralBytes))) {
-            throw new UnauthorizedException("Previous server ephemeral value not found.");
+        Set<UserTemporarySRPData> userTemporarySrpDatas = currentAuthentication.getUserTemporarySrpDatas();
+        userTemporarySrpDatas.removeIf(ExpirationUtils::isExpiredNow);
+
+        UserTemporarySRPData foundUserTemporarySrpData = null;
+        for (UserTemporarySRPData userTemporarySRPData : userTemporarySrpDatas) {
+            if (userTemporarySRPData.getServerEphemeralHex().equals(request.getServerEphemeralHex())) {
+                foundUserTemporarySrpData = userTemporarySRPData;
+                userTemporarySrpDatas.remove(userTemporarySRPData);
+                break;
+            }
         }
 
-        BigInteger serverEphemeralBigInteger = new BigInteger(serverEphemeralBytes);
+        if (foundUserTemporarySrpData == null) {
+            throw new UnauthorizedException("Previous, still valid server ephemeral value not found.");
+        }
+
+        userAuthenticationRepository.save(currentAuthentication);
+
+        BigInteger serverSecretBigInteger = new BigInteger(foundUserTemporarySrpData.getServerSecretHex(), 16);
+        srp.setb(serverSecretBigInteger);
+
+        BigInteger serverEphemeralBigInteger = new BigInteger(foundUserTemporarySrpData.getServerEphemeralHex(), 16);
         srp.setB(serverEphemeralBigInteger);
 
-        BigInteger clientEphemeralBigInteger;
-        try {
-            String clientEphemeralBase64 = request.getClientEphemeralBase64();
-            byte[] clientEphemeralBytes = Base64.getDecoder().decode(clientEphemeralBase64);
-            clientEphemeralBigInteger = new BigInteger(clientEphemeralBytes);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not decode client ephemeral.", ex);
-        }
-
+        BigInteger clientEphemeralBigInteger = new BigInteger(request.getClientEphemeralHex(), 16);
         try {
             srp.calculateSecret(clientEphemeralBigInteger);
         } catch (Exception ex) {
             throw new UnauthorizedException("SRP secret could not be calculated.", ex);
         }
 
-        BigInteger clientProofBigInteger;
-        try {
-            String clientProofBase64 = request.getClientProofBase64();
-            byte[] clientProofBytes = Base64.getDecoder().decode(clientProofBase64);
-            clientProofBigInteger = new BigInteger(clientProofBytes);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not decode client proof.", ex);
-        }
-
+        BigInteger clientProofBigInteger = new BigInteger(request.getClientProofHex(), 16);
         boolean clientProofVerified;
         try {
             clientProofVerified = srp.verifyClientEvidenceMessage(clientProofBigInteger);
@@ -469,9 +469,11 @@ public class AuthenticationService {
 
         Session session = sessionRepository.findById(getCurrentAuthenticationDetails().getAuthenticationId())
             .orElseThrow();
-        session.getSessionMultiFactorElevationRequests().removeIf(ExpirationUtils::isExpiredNow);
-        boolean authenticationCodeFound = session.getSessionMultiFactorElevationRequests()
-            .removeIf(r -> r.getRequestCode().equals(authenticationCode));
+        Set<SessionMultiFactorElevationRequest> sessionMultiFactorElevationRequests =
+            session.getSessionMultiFactorElevationRequests();
+        sessionMultiFactorElevationRequests.removeIf(ExpirationUtils::isExpiredNow);
+        boolean authenticationCodeFound =
+            sessionMultiFactorElevationRequests.removeIf(r -> r.getRequestCode().equals(authenticationCode));
         if (!authenticationCodeFound) {
             throw new UnauthorizedException("Authentication code not found.");
         }
@@ -495,7 +497,9 @@ public class AuthenticationService {
             userIdentityRepository.findByEmailAddress(request.getEmailAddress().toLowerCase());
         if (userIdentityOptional.isPresent()) {
             UserIdentity userIdentity = userIdentityOptional.get();
-            UserAuthentication userAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
+            UserAuthentication userAuthentication =
+                userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
+                    .orElseThrow();
             UserAuthenticationResetRequest userAuthenticationResetRequest =
                 userAuthenticationResetRequestHelper.create();
             userAuthentication.getUserAuthenticationResetRequests().add(userAuthenticationResetRequest);
@@ -508,30 +512,23 @@ public class AuthenticationService {
         Optional<UserAuthenticationResetRequest> userAuthenticationResetRequestOptional =
             userAuthenticationResetRequestRepository.findByRequestKey(request.getPasswordResetKey());
         if (userAuthenticationResetRequestOptional.isPresent()) {
-            byte[] srpSalt;
-            try {
-                srpSalt = Base64.getDecoder().decode(request.getSrpSaltBase64());
-            } catch (Exception ex) {
-                throw new BadRequestException("SRP salt could not be decoded.", ex);
-            }
-
-            byte[] srpVerifier;
-            try {
-                srpVerifier = Base64.getDecoder().decode(request.getSrpSaltBase64());
-            } catch (Exception ex) {
-                throw new BadRequestException("SRP verifier could not be decoded.", ex);
-            }
-
             UserAuthenticationResetRequest userAuthenticationResetRequest =
                 userAuthenticationResetRequestOptional.get();
             if (ExpirationUtils.isExpiredNow(userAuthenticationResetRequest)) {
                 throw new UnauthorizedException("Password reset request expired.");
             }
 
-            UserIdentity userIdentity = userAuthenticationResetRequest.getUserAuthentication().getUserIdentity();
-            UserAuthentication userAuthentication = userAuthenticationHelper.create(userIdentity,
-                srpSalt, srpVerifier, request.getPasswordStretchingAlgorithm());
-            userIdentity.getAuthentications().add(userAuthentication);
+            String srpSaltHex = request.getSrpSaltHex();
+            String srpVerifierHex = request.getSrpVerifierHex();
+
+            UserAuthentication userAuthentication =
+                userAuthenticationRepository.findById(userAuthenticationResetRequest.getUserAuthentication().getId())
+                    .orElseThrow();
+            UserIdentity userIdentity = userIdentityRepository.findById(userAuthentication.getUserIdentity().getId())
+                .orElseThrow();
+            UserAuthentication newUserAuthentication = userAuthenticationHelper.create(userIdentity,
+                srpSaltHex, srpVerifierHex, request.getPasswordStretchingAlgorithm());
+            userIdentity.getAuthentications().add(newUserAuthentication);
 
             userIdentityRepository.save(userIdentity);
             userAuthenticationResetRequestRepository.delete(userAuthenticationResetRequest);
@@ -565,12 +562,18 @@ public class AuthenticationService {
             throw new UnauthorizedException("Authentication session expired.");
         }
 
-        return authenticationSession.getUserAuthentication().getUserIdentity();
+        UserAuthentication userAuthentication =
+            userAuthenticationRepository.findById(authenticationSession.getUserAuthentication().getId()).orElseThrow();
+        UserIdentity userIdentity =
+            userIdentityRepository.findById(userAuthentication.getUserIdentity().getId()).orElseThrow();
+
+        return userIdentity;
     }
 
     public UserIdentity verifyDeviceCredentials(String deviceId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
-        return userDevice.getUserIdentity();
+        UserIdentity userIdentity = userIdentityRepository.findById(userDevice.getUserIdentity().getId()).orElseThrow();
+        return userIdentity;
     }
 
     public UserIdentity verifySessionCredentials(String deviceId, String sessionId) {
@@ -585,7 +588,9 @@ public class AuthenticationService {
             throw new UnauthorizedException("Session expired.");
         }
 
-        return userDevice.getUserIdentity();
+        UserIdentity userIdentity = userIdentityRepository.findById(userDevice.getUserIdentity().getId()).orElseThrow();
+
+        return userIdentity;
     }
 
     public boolean sessionHasAssuranceLevel(String sessionId, SessionAssuranceLevel requiredAssuranceLevel) {
@@ -605,7 +610,8 @@ public class AuthenticationService {
         return true;
     }
 
-    public boolean authenticationSessionHasAssuranceLevel(String authenticationSessionId, SessionAssuranceLevel requiredAssuranceLevel) {
+    public boolean authenticationSessionHasAssuranceLevel(String authenticationSessionId,
+                                                          SessionAssuranceLevel requiredAssuranceLevel) {
         AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
             .orElseThrow(() -> new UnauthorizedException("No authentication session found with the given ID."));
 

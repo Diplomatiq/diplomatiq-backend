@@ -18,6 +18,8 @@ public class AuthenticationSessionHelper {
         AuthenticationSession authenticationSession = new AuthenticationSession();
         ExpirationUtils.setExpirationLifeSpan(authenticationSession, AUTHENTICATION_SESSION_VALIDITY);
         authenticationSession.setAuthenticationSessionKey(authenticationSessionKey);
+        authenticationSession.setAssuranceLevel(SessionAssuranceLevel.PasswordElevatedSession);
+        authenticationSession.setAssuranceLevelExpirationTime(authenticationSession.getExpirationTime());
         return authenticationSession;
     }
 
