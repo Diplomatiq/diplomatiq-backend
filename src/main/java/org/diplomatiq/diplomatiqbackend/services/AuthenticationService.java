@@ -1,7 +1,5 @@
 package org.diplomatiq.diplomatiqbackend.services;
 
-import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.*;
@@ -22,6 +20,7 @@ import org.diplomatiq.diplomatiqbackend.utils.crypto.aead.DiplomatiqAEAD;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.convert.BigIntegerToByteArray;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.srp.RequestBoundaryCrossingSRP6Server;
+import org.diplomatiq.diplomatiqbackend.utils.crypto.srp.SRP6Factory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -65,6 +64,12 @@ public class AuthenticationService {
 
     @Autowired
     private AuthenticationSessionRepository authenticationSessionRepository;
+
+    @Autowired
+    private AuthenticationSessionMultiFactorElevationRequestRepository authenticationSessionMultiFactorElevationRequestRepository;
+
+    @Autowired
+    private SessionMultiFactorElevationRequestRepository sessionMultiFactorElevationRequestRepository;
 
     @Autowired
     private SessionRepository sessionRepository;
@@ -220,9 +225,7 @@ public class AuthenticationService {
 
         BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
-        RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
-        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
-            RandomUtils.getStrongSecureRandom());
+        RequestBoundaryCrossingSRP6Server srp = SRP6Factory.getSrp6Server(srpVerifierBigInteger);
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
         String serverEphemeralHex = serverEphemeralBigInteger.toString(16);
@@ -254,9 +257,7 @@ public class AuthenticationService {
 
         BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
-        RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
-        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
-            RandomUtils.getStrongSecureRandom());
+        RequestBoundaryCrossingSRP6Server srp = SRP6Factory.getSrp6Server(srpVerifierBigInteger);
 
         Set<UserTemporarySRPData> userTemporarySrpDatas = currentAuthentication.getUserTemporarySrpDatas();
         userTemporarySrpDatas.removeIf(ExpirationUtils::isExpiredNow);
@@ -338,9 +339,8 @@ public class AuthenticationService {
 
         AuthenticationSessionMultiFactorElevationRequest elevationRequest =
             authenticationSessionMultiFactorElevationRequestHelper.create();
-        authenticationSession.getAuthenticationSessionMultiFactorElevationRequests().add(elevationRequest);
-
-        authenticationSessionRepository.save(authenticationSession);
+        elevationRequest.setAuthenticationSession(authenticationSession);
+        authenticationSessionMultiFactorElevationRequestRepository.save(elevationRequest);
 
         emailSendingEngine.sendMultiFactorAuthenticationEmail(elevationRequest);
     }
@@ -372,9 +372,7 @@ public class AuthenticationService {
 
         BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
-        RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
-        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
-            RandomUtils.getStrongSecureRandom());
+        RequestBoundaryCrossingSRP6Server srp = SRP6Factory.getSrp6Server(srpVerifierBigInteger);
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
         String serverEphemeralHex = serverEphemeralBigInteger.toString(16);
@@ -400,9 +398,7 @@ public class AuthenticationService {
 
         BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
-        RequestBoundaryCrossingSRP6Server srp = new RequestBoundaryCrossingSRP6Server();
-        srp.init(SRP6StandardGroups.rfc5054_8192, srpVerifierBigInteger, new SHA256Digest(),
-            RandomUtils.getStrongSecureRandom());
+        RequestBoundaryCrossingSRP6Server srp = SRP6Factory.getSrp6Server(srpVerifierBigInteger);
 
         Set<UserTemporarySRPData> userTemporarySrpDatas = currentAuthentication.getUserTemporarySrpDatas();
         userTemporarySrpDatas.removeIf(ExpirationUtils::isExpiredNow);
@@ -458,8 +454,8 @@ public class AuthenticationService {
             .orElseThrow();
 
         SessionMultiFactorElevationRequest elevationRequest = sessionMultiFactorElevationRequestHelper.create();
-        session.getSessionMultiFactorElevationRequests().add(elevationRequest);
-        sessionRepository.save(session);
+        elevationRequest.setSession(session);
+        sessionMultiFactorElevationRequestRepository.save(elevationRequest);
 
         emailSendingEngine.sendMultiFactorAuthenticationEmail(elevationRequest);
     }
@@ -497,13 +493,11 @@ public class AuthenticationService {
             userIdentityRepository.findByEmailAddress(request.getEmailAddress().toLowerCase());
         if (userIdentityOptional.isPresent()) {
             UserIdentity userIdentity = userIdentityOptional.get();
-            UserAuthentication userAuthentication =
-                userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
-                    .orElseThrow();
+            UserAuthentication userAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
             UserAuthenticationResetRequest userAuthenticationResetRequest =
                 userAuthenticationResetRequestHelper.create();
-            userAuthentication.getUserAuthenticationResetRequests().add(userAuthenticationResetRequest);
-            userIdentityRepository.save(userIdentity);
+            userAuthenticationResetRequest.setUserAuthentication(userAuthentication);
+            userAuthenticationResetRequestRepository.save(userAuthenticationResetRequest);
             emailSendingEngine.sendPasswordResetEmail(userAuthenticationResetRequest);
         }
     }

@@ -41,9 +41,9 @@ public class PasswordAuthenticationInitV1Response {
 
     @Schema(
         description = "The hash function used for calculating the exponent of the SRP verifier (v)",
-        example = "Argon2_v1"
+        example = "Argon2_v1",
+        required = true
     )
-    @NotBlank
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
 
     public PasswordAuthenticationInitV1Response(@NotBlank String serverEphemeralHex,

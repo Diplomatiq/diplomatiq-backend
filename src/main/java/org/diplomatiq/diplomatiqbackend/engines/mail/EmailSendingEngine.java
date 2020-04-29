@@ -2,15 +2,17 @@ package org.diplomatiq.diplomatiqbackend.engines.mail;
 
 import com.sendgrid.Method;
 import com.sendgrid.Request;
+import com.sendgrid.Response;
 import com.sendgrid.SendGrid;
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Email;
 import com.sendgrid.helpers.mail.objects.Personalization;
-import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.AuthenticationSessionMultiFactorElevationRequest;
-import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.SessionMultiFactorElevationRequest;
-import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthenticationResetRequest;
-import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
+import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
+import org.diplomatiq.diplomatiqbackend.repositories.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -25,8 +27,25 @@ public class EmailSendingEngine {
         FROM_EMAIL.setEmail("team@diplomatiq.org");
     }
 
+    private final Logger logger = LoggerFactory.getLogger(EmailSendingEngine.class);
+
     @Autowired
     SendGrid sendGridApiClient;
+
+    @Autowired
+    UserIdentityRepository userIdentityRepository;
+
+    @Autowired
+    UserAuthenticationRepository userAuthenticationRepository;
+
+    @Autowired
+    SessionRepository sessionRepository;
+
+    @Autowired
+    AuthenticationSessionRepository authenticationSessionRepository;
+
+    @Autowired
+    UserDeviceRepository userDeviceRepository;
 
     public void sendEmailAddressValidationEmail(UserIdentity userIdentity) throws IOException {
         Email toEmail = new Email();
@@ -56,11 +75,14 @@ public class EmailSendingEngine {
         request.setEndpoint("mail/send");
         request.setBody(mail.build());
 
-        sendGridApiClient.api(request);
+        sendRequest(request);
     }
 
     public void sendPasswordResetEmail(UserAuthenticationResetRequest userAuthenticationResetRequest) throws IOException {
-        UserIdentity userIdentity = userAuthenticationResetRequest.getUserAuthentication().getUserIdentity();
+        UserAuthentication userAuthentication = userAuthenticationRepository
+            .findById(userAuthenticationResetRequest.getUserAuthentication().getId()).orElseThrow();
+        UserIdentity userIdentity = userIdentityRepository.findById(userAuthentication.getUserIdentity().getId())
+            .orElseThrow();
 
         Email toEmail = new Email();
         toEmail.setEmail(userIdentity.getEmailAddress());
@@ -89,19 +111,29 @@ public class EmailSendingEngine {
         request.setEndpoint("mail/send");
         request.setBody(mail.build());
 
-        sendGridApiClient.api(request);
+        sendRequest(request);
     }
 
     public void sendMultiFactorAuthenticationEmail(SessionMultiFactorElevationRequest sessionMultiFactorElevationRequest) throws IOException {
+        Session session =
+            sessionRepository.findById(sessionMultiFactorElevationRequest.getSession().getId()).orElseThrow();
+        UserDevice userDevice = userDeviceRepository.findById(session.getUserDevice().getId()).orElseThrow();
+
         sendMultiFactorAuthenticationEmailInternal(
-            sessionMultiFactorElevationRequest.getSession().getUserDevice().getUserIdentity(),
+            userDevice.getUserIdentity(),
             sessionMultiFactorElevationRequest.getRequestCode()
         );
     }
 
     public void sendMultiFactorAuthenticationEmail(AuthenticationSessionMultiFactorElevationRequest authenticationSessionMultiFactorElevationRequest) throws IOException {
+        AuthenticationSession authenticationSession = authenticationSessionRepository
+            .findById(authenticationSessionMultiFactorElevationRequest.getAuthenticationSession().getId())
+            .orElseThrow();
+        UserAuthentication userAuthentication = userAuthenticationRepository
+            .findById(authenticationSession.getUserAuthentication().getId()).orElseThrow();
+
         sendMultiFactorAuthenticationEmailInternal(
-            authenticationSessionMultiFactorElevationRequest.getAuthenticationSession().getUserAuthentication().getUserIdentity(),
+            userAuthentication.getUserIdentity(),
             authenticationSessionMultiFactorElevationRequest.getRequestCode()
         );
     }
@@ -129,6 +161,16 @@ public class EmailSendingEngine {
         request.setEndpoint("mail/send");
         request.setBody(mail.build());
 
-        sendGridApiClient.api(request);
+        sendRequest(request);
+    }
+
+    private void sendRequest(Request request) throws IOException {
+        Response response = sendGridApiClient.api(request);
+        if (response != null) {
+            HttpStatus responseCode = HttpStatus.valueOf(response.getStatusCode());
+            if (responseCode.isError()) {
+                logger.warn("Could not send email: {}", response.getBody());
+            }
+        }
     }
 }

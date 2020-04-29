@@ -7,6 +7,7 @@ import org.springframework.web.filter.GenericFilterBean;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +22,7 @@ public abstract class JsonResponseWritingFilter extends GenericFilterBean {
     public void writeJsonResponse(HttpServletResponse response, ResponseEntity<Object> responseEntity) throws IOException {
         response.setStatus(responseEntity.getStatusCodeValue());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         for (Map.Entry<String, List<String>> headerEntry : responseEntity.getHeaders().entrySet()) {
             String headerName = headerEntry.getKey();

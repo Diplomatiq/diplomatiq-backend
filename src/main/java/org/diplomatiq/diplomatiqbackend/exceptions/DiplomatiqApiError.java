@@ -26,13 +26,17 @@ public final class DiplomatiqApiError {
         example = "BadRequest"
     )
     @NotNull
-    private final DiplomatiqApiError.DiplomatiqApiErrorCode errorCode;
+    private DiplomatiqApiError.DiplomatiqApiErrorCode errorCode;
 
     @Schema(description = "Optional retry information for the client")
-    private final RetryInformation retryInformation;
+    private RetryInformation retryInformation;
 
     @JsonIgnore
-    private final Throwable cause;
+    private Throwable cause;
+
+    public DiplomatiqApiError() {
+        super();
+    }
 
     public DiplomatiqApiError(DiplomatiqApiErrorCode errorCode, Throwable cause) {
         this.errorCode = Optional.ofNullable(errorCode).orElse(DiplomatiqApiErrorCode.InternalServerError);
@@ -56,5 +60,17 @@ public final class DiplomatiqApiError {
 
     public RetryInformation getRetryInformation() {
         return retryInformation;
+    }
+
+    public void setErrorCode(DiplomatiqApiErrorCode errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public void setRetryInformation(RetryInformation retryInformation) {
+        this.retryInformation = retryInformation;
+    }
+
+    public void setCause(Throwable cause) {
+        this.cause = cause;
     }
 }

@@ -93,7 +93,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
 
         String httpRequestMethod = request.getMethod().toUpperCase();
         String uri = request.getRequestURI();
-        String queryString = request.getQueryString();
+        String queryString = Optional.ofNullable(request.getQueryString()).orElse("");
 
         String signedHeaderNamesString = request.getHeader(DiplomatiqHeaders.KnownHeader.SignedHeaders.name());
         if (signedHeaderNamesString == null || signedHeaderNamesString.equals("")) {
