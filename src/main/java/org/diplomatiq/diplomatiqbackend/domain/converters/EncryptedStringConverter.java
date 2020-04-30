@@ -13,7 +13,7 @@ public class EncryptedStringConverter extends AbstractEncryptedConverter impleme
         try {
             byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             DiplomatiqAEAD diplomatiqAEAD = new DiplomatiqAEAD(bytes);
-            byte[] encrypted = diplomatiqAEAD.toBytes(getLatestKey());
+            byte[] encrypted = diplomatiqAEAD.toBytes(getEncryptionKey());
             return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception ex) {
             throw new GraphPropertyCryptoException("Could not encrypt graph property.", ex);
@@ -22,14 +22,18 @@ public class EncryptedStringConverter extends AbstractEncryptedConverter impleme
 
     @Override
     public String toEntityAttribute(String s) {
+        byte[] diplomatiqAeadBytes;
         try {
-            byte[] diplomatiqAEADBytes = Base64.getDecoder().decode(s);
-            for (byte[] keyCandidate : getKeyByVersionMap().descendingMap().values()) {
-                DiplomatiqAEAD diplomatiqAEAD = DiplomatiqAEAD.fromBytes(diplomatiqAEADBytes, keyCandidate);
+            diplomatiqAeadBytes = Base64.getDecoder().decode(s);
+        } catch (IllegalArgumentException ex) {
+            throw new GraphPropertyCryptoException("Base64 could not be decoded.", ex);
+        }
+
+        for (byte[] keyCandidate : getDecryptionKeyCandidates()) {
+            try {
+                DiplomatiqAEAD diplomatiqAEAD = DiplomatiqAEAD.fromBytes(diplomatiqAeadBytes, keyCandidate);
                 return new String(diplomatiqAEAD.getPlaintext(), StandardCharsets.UTF_8);
-            }
-        } catch (Throwable ex) {
-            throw new GraphPropertyCryptoException("Could not decrypt graph property.", ex);
+            } catch (Exception ignored) {}
         }
 
         throw new GraphPropertyCryptoException("Could not decrypt graph property.");

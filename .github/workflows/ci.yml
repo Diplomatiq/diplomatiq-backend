@@ -63,6 +63,8 @@ jobs:
                   architecture: x64
             - name: Build and test
               run: ./mvnw clean verify
+              env:
+                  NEO4J_ENCRYPTION_KEY_V1: VGhpcyBpcyBhIGR1bW1tbW1tbW1tbW1tbW15IGtleS4=
             - name: Scan with SonarCloud
               run: ./mvnw sonar:sonar -Psonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
               env:
