@@ -4,7 +4,6 @@ import org.neo4j.ogm.session.SessionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 import org.springframework.data.neo4j.transaction.Neo4jTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -12,7 +11,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableNeo4jRepositories("org.diplomatiq.diplomatiqbackend.repositories")
 @EnableTransactionManagement
-@Profile("production")
 public class Neo4jConfiguration {
     @Value("${neo4j.uri}")
     private String uri;

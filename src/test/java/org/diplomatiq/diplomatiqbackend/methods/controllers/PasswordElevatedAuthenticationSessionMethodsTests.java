@@ -26,7 +26,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("testing")
 public class PasswordElevatedAuthenticationSessionMethodsTests {
     @Autowired
     private WebTestClient webTestClient;

@@ -50,7 +50,6 @@ import java.util.Base64;
 import java.util.Set;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("testing")
 public class UnauthenticatedMethodsTests {
     @Autowired
     private WebTestClient webTestClient;
