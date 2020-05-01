@@ -68,10 +68,10 @@ jobs:
                   java-package: jdk
                   architecture: x64
             - name: Build and test
-              run: mvn clean verify
+              run: ./mvnw clean verify
               env:
                   NEO4J_ENCRYPTION_KEY_V1: VGhpcyBpcyBhIGR1bW1tbW1tbW1tbW1tbW15IGtleS4=
             - name: Scan with SonarCloud
-              run: mvn sonar:sonar -Psonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+              run: ./mvnw sonar:sonar -Psonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
