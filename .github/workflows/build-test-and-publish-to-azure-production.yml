@@ -26,9 +26,7 @@ jobs:
                   java-package: jdk
                   architecture: x64
             - name: Set up Neo4j in Docker
-              run: docker run -d -p 7687:7687 neo4j:latest
-              env:
-                  NEO4J_AUTH: neo4j/secret
+              run: docker run -d -p 7687:7687 --env=NEO4J_AUTH=neo4j/secret neo4j:latest
             - name: Package distribution deployment artefact
               run: ./mvnw clean package
               env:
