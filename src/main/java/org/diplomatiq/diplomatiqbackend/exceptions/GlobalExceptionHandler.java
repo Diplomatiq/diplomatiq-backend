@@ -212,7 +212,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     protected ResponseEntity<Object> handleDiplomatiqApiError(DiplomatiqApiError apiError) {
-        logger.trace(apiError.getErrorCode(), apiError.getCause());
+        logger.warn(apiError.getErrorCode(), apiError.getCause());
         return new ResponseEntity<>(apiError, new HttpHeaders(), DiplomatiqApiError.DIPLOMATIQ_API_ERROR_STATUS_CODE);
     }
 }
