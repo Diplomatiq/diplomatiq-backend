@@ -27,6 +27,8 @@ jobs:
                   architecture: x64
             - name: Package distribution deployment artefact
               run: ./mvnw clean package
+              env:
+                  NEO4J_ENCRYPTION_KEY_V1: VGhpcyBpcyBhIGR1bW1tbW1tbW1tbW1tbW15IGtleS4=
             - name: Create distribution folder
               run: mkdir distribution
             - name: Copy distribution deployment artefact to the distribution folder
