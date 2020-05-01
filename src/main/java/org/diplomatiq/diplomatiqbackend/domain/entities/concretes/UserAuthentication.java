@@ -1,9 +1,11 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
+import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedStringConverter;
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractCreationRecordedNodeEntity;
 import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,10 +14,10 @@ import java.util.Set;
 public class UserAuthentication extends AbstractCreationRecordedNodeEntity {
     private long version;
 
-//    @Convert(EncryptedStringConverter.class)
+    @Convert(EncryptedStringConverter.class)
     private String srpSaltHex;
 
-//    @Convert(EncryptedStringConverter.class)
+    @Convert(EncryptedStringConverter.class)
     private String srpVerifierHex;
 
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;

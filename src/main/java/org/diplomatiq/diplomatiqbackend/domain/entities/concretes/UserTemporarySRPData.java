@@ -1,15 +1,17 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
+import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedStringConverter;
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractExpiringNodeEntity;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 @NodeEntity
 public class UserTemporarySRPData extends AbstractExpiringNodeEntity {
-//    @Convert(EncryptedStringConverter.class)
+    @Convert(EncryptedStringConverter.class)
     private String serverEphemeralHex;
 
-//    @Convert(EncryptedStringConverter.class)
+    @Convert(EncryptedStringConverter.class)
     private String serverSecretHex;
 
     @Relationship(type = "IS_CURRENTLY_AUTHENTICATING_WITH_SRP_DATA", direction = Relationship.INCOMING)

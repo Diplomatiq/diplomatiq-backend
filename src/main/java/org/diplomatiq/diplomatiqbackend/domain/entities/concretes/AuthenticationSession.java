@@ -1,9 +1,11 @@
 package org.diplomatiq.diplomatiqbackend.domain.entities.concretes;
 
+import org.diplomatiq.diplomatiqbackend.domain.converters.EncryptedBytesConverter;
 import org.diplomatiq.diplomatiqbackend.domain.entities.abstracts.AbstractExpiringNodeEntity;
 import org.diplomatiq.diplomatiqbackend.methods.attributes.SessionAssuranceLevel;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -11,7 +13,7 @@ import java.util.Set;
 
 @NodeEntity
 public class AuthenticationSession extends AbstractExpiringNodeEntity {
-//    @Convert(EncryptedBytesConverter.class)
+    @Convert(EncryptedBytesConverter.class)
     private byte[] authenticationSessionKey;
 
     SessionAssuranceLevel assuranceLevel;
