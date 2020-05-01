@@ -1,6 +1,6 @@
 name: CI
 
-on: [push, pull_request]
+on: pull_request
 
 jobs:
     build-test-scan:
@@ -14,7 +14,6 @@ jobs:
               run: git fetch --unshallow
             - name: Request the number of commits on the pull request
               id: number_of_commits_on_pr_request
-              if: github.event_name == 'pull_request'
               uses: octokit/graphql-action@v2.x
               with:
                   query: |
@@ -34,13 +33,11 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             - name: Get the number of commits on the pull request from the response
               id: number_of_commits_on_pr_result
-              if: github.event_name == 'pull_request'
               uses: gr2m/get-json-paths-action@v1.x
               with:
                   json: ${{ steps.number_of_commits_on_pr_request.outputs.data }}
                   commits_count: 'repository.pullRequest.commits.totalCount'
             - name: Check if the number of commits on the pull request is equal to one
-              if: github.event_name == 'pull_request'
               run: |
                   if [ "${{ steps.number_of_commits_on_pr_result.outputs.commits_count }}" -ne 1 ]; then
                       echo "The pull request must consist of exactly one commit. Please squash your commits into one."
@@ -53,7 +50,6 @@ jobs:
             - name: Install dependencies
               run: npm ci
             - name: Lint the commit message of the pull request
-              if: github.event_name == 'pull_request'
               run: npx commitlint --from HEAD^ --to HEAD --config .commitlintrc.json
             - uses: actions/cache@v1
               with:
