@@ -20,7 +20,9 @@ public class Neo4jTestConfiguration {
 
     @Bean
     public org.neo4j.ogm.config.Configuration configuration() {
-        return new org.neo4j.ogm.config.Configuration.Builder().build();
+        return new org.neo4j.ogm.config.Configuration.Builder()
+            .autoIndex("update")
+            .build();
     }
 
     @Bean
