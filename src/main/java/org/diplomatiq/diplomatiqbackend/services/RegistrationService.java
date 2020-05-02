@@ -23,12 +23,6 @@ public class RegistrationService {
     @Autowired
     private UserIdentityRepository userIdentityRepository;
 
-    @Autowired
-    private UserIdentityHelper userIdentityHelper;
-
-    @Autowired
-    private UserAuthenticationHelper userAuthenticationHelper;
-
     public void registerUserV1(RegisterUserV1Request request) throws IOException {
         String emailAddress = request.getEmailAddress().toLowerCase();
 
@@ -36,14 +30,14 @@ public class RegistrationService {
             return;
         }
 
-        UserIdentity userIdentity = userIdentityHelper.create(emailAddress,
+        UserIdentity userIdentity = UserIdentityHelper.create(emailAddress,
             request.getFirstName(), request.getLastName());
 
         String srpSaltHex = request.getSrpSaltHex();
         String srpVerifierHex = request.getSrpVerifierHex();
 
         UserAuthentication userAuthentication =
-            userAuthenticationHelper.create(userIdentity, srpSaltHex, srpVerifierHex,
+            UserAuthenticationHelper.create(userIdentity, srpSaltHex, srpVerifierHex,
                 request.getPasswordStretchingAlgorithm());
 
         userIdentity.setAuthentications(Set.of(userAuthentication));

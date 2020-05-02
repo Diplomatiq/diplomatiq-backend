@@ -27,7 +27,7 @@ public class ControllerSecurityExpressions extends SecurityExpressionRoot implem
 
         AuthenticationToken authenticationToken = (AuthenticationToken)authentication;
         AuthenticationDetails authenticationDetails = authenticationToken.getCredentials();
-        if (!authenticationDetails.diplomatiqAuthenticationScheme().equals(DiplomatiqAuthenticationScheme.SessionSignatureV1)) {
+        if (!authenticationDetails.getDiplomatiqAuthenticationScheme().equals(DiplomatiqAuthenticationScheme.SessionSignatureV1)) {
             return false;
         }
 
@@ -43,7 +43,7 @@ public class ControllerSecurityExpressions extends SecurityExpressionRoot implem
 
         AuthenticationToken authenticationToken = (AuthenticationToken)authentication;
         AuthenticationDetails authenticationDetails = authenticationToken.getCredentials();
-        if (!authenticationDetails.diplomatiqAuthenticationScheme().equals(DiplomatiqAuthenticationScheme.AuthenticationSessionSignatureV1)) {
+        if (!authenticationDetails.getDiplomatiqAuthenticationScheme().equals(DiplomatiqAuthenticationScheme.AuthenticationSessionSignatureV1)) {
             return false;
         }
 
@@ -60,7 +60,7 @@ public class ControllerSecurityExpressions extends SecurityExpressionRoot implem
 
         AuthenticationToken authenticationToken = (AuthenticationToken)authentication;
         AuthenticationDetails authenticationDetails = authenticationToken.getCredentials();
-        if (!authenticationDetails.diplomatiqAuthenticationScheme().equals(DiplomatiqAuthenticationScheme.DeviceSignatureV1)) {
+        if (!authenticationDetails.getDiplomatiqAuthenticationScheme().equals(DiplomatiqAuthenticationScheme.DeviceSignatureV1)) {
             return false;
         }
 

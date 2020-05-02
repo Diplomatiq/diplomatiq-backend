@@ -1,5 +1,6 @@
 package org.diplomatiq.diplomatiqbackend.services;
 
+import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.util.Arrays;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.*;
 import org.diplomatiq.diplomatiqbackend.domain.entities.helpers.*;
@@ -48,7 +49,7 @@ public class AuthenticationService {
     private EmailSendingEngine emailSendingEngine;
 
     @Autowired
-    private PasswordStretchingEngine passwordStretchingEngine;
+    private SRP6Factory srp6Factory;
 
     @Autowired
     private UserIdentityRepository userIdentityRepository;
@@ -77,26 +78,8 @@ public class AuthenticationService {
     @Autowired
     private UserAuthenticationResetRequestRepository userAuthenticationResetRequestRepository;
 
-    @Autowired
-    private UserIdentityHelper userIdentityHelper;
-
-    @Autowired
-    private UserDeviceHelper userDeviceHelper;
-
-    @Autowired
-    private UserAuthenticationResetRequestHelper userAuthenticationResetRequestHelper;
-
-    @Autowired
-    private UserAuthenticationHelper userAuthenticationHelper;
-
-    @Autowired
-    private SessionMultiFactorElevationRequestHelper sessionMultiFactorElevationRequestHelper;
-
-    @Autowired
-    private AuthenticationSessionMultiFactorElevationRequestHelper authenticationSessionMultiFactorElevationRequestHelper;
-
     public byte[] getDeviceContainerKeyV1(String deviceId) {
-        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElse(userDeviceHelper.create());
+        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElse(UserDeviceHelper.create());
         return userDevice.getDeviceContainerKey();
     }
 
@@ -143,13 +126,14 @@ public class AuthenticationService {
         }
 
         Session newSession = SessionHelper.create();
-        byte[] sessionIdBytes = newSession.getId().getBytes(StandardCharsets.UTF_8);
+        newSession.setUserDevice(userDevice);
+        Session persistedNewSession = sessionRepository.save(newSession);
+
+        String sessionId = persistedNewSession.getId();
+        byte[] sessionIdBytes = sessionId.getBytes(StandardCharsets.UTF_8);
         DiplomatiqAEAD sessionIdAead = new DiplomatiqAEAD(sessionIdBytes);
         byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
         String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
-
-        userDevice.setSession(newSession);
-        userDeviceRepository.save(userDevice);
 
         return new GetSessionV1Response(sessionIdAeadBase64);
     }
@@ -158,32 +142,32 @@ public class AuthenticationService {
         NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException,
         IOException {
         String authenticationSessionId = getCurrentAuthenticationDetails().getAuthenticationId();
-        AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
-            .orElseThrow();
-        UserAuthentication userAuthentication =
-            userAuthenticationRepository.findById(authenticationSession.getUserAuthentication().getId()).orElseThrow();
-        UserIdentity userIdentity =
-            userIdentityRepository.findById(userAuthentication.getUserIdentity().getId()).orElseThrow();
+        AuthenticationSession authenticationSession =
+            authenticationSessionRepository.findById(authenticationSessionId, 2).orElseThrow();
 
-        UserDevice userDevice = userDeviceHelper.create();
-        userIdentity.getDevices().add(userDevice);
+        UserDevice userDevice = UserDeviceHelper.create();
+        userDevice.setUserIdentity(authenticationSession.getUserAuthentication().getUserIdentity());
+        UserDevice persistedUserDevice = userDeviceRepository.save(userDevice);
 
-        userIdentityRepository.save(userIdentity);
-
-        String deviceId = userDevice.getId();
         byte[] authenticationSessionKey = authenticationSession.getAuthenticationSessionKey();
 
-        byte[] deviceKey = userDevice.getDeviceKey();
+        byte[] deviceKey = persistedUserDevice.getDeviceKey();
         DiplomatiqAEAD deviceKeyAead = new DiplomatiqAEAD(deviceKey);
         byte[] deviceKeyAeadBytes = deviceKeyAead.toBytes(authenticationSessionKey);
         String deviceKeyAeadBase64 = Base64.getEncoder().encodeToString(deviceKeyAeadBytes);
 
-        byte[] sessionToken = userDevice.getSessionToken();
+        String deviceId = persistedUserDevice.getId();
+        byte[] deviceIdBytes = deviceId.getBytes(StandardCharsets.UTF_8);
+        DiplomatiqAEAD deviceIdAead = new DiplomatiqAEAD(deviceIdBytes);
+        byte[] deviceIdAeadBytes = deviceIdAead.toBytes(deviceKey);
+        String deviceIdAeadBase64 = Base64.getEncoder().encodeToString(deviceIdAeadBytes);
+
+        byte[] sessionToken = persistedUserDevice.getSessionToken();
         DiplomatiqAEAD sessionTokenAead = new DiplomatiqAEAD(sessionToken);
-        byte[] sessionTokenAeadBytes = sessionTokenAead.toBytes(authenticationSessionKey);
+        byte[] sessionTokenAeadBytes = sessionTokenAead.toBytes(deviceKey);
         String sessionTokenAeadBase64 = Base64.getEncoder().encodeToString(sessionTokenAeadBytes);
 
-        return new LoginV1Response(deviceId, deviceKeyAeadBase64, sessionTokenAeadBase64);
+        return new LoginV1Response(deviceIdAeadBase64, deviceKeyAeadBase64, sessionTokenAeadBase64);
     }
 
     public void logoutV1() {
@@ -198,34 +182,35 @@ public class AuthenticationService {
 
     public PasswordAuthenticationInitV1Response passwordAuthenticationInitV1(PasswordAuthenticationInitV1Request request) throws NoSuchAlgorithmException {
         String emailAddress = request.getEmailAddress().toLowerCase();
-        Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailAddress(emailAddress);
+        Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailAddress(emailAddress, 2);
         boolean existingUser = userIdentityOptional.isPresent();
 
         UserIdentity userIdentity;
         if (existingUser) {
             userIdentity = userIdentityOptional.get();
         } else {
-            userIdentity = userIdentityHelper.create(emailAddress, "", "");
-            String srpSaltHex = new BigInteger(1, RandomUtils.bytes(32)).toString(16);
-            String srpVerifierHex = new BigInteger(1, RandomUtils.bytes(1024)).toString(16);
-            PasswordStretchingAlgorithm passwordStretchingAlgorithm = passwordStretchingEngine.getLatestAlgorithm();
-            UserAuthentication userAuthentication = userAuthenticationHelper.create(userIdentity,
+            userIdentity = UserIdentityHelper.create(emailAddress, "", "");
+
+            byte[] saltBytes = RandomUtils.bytes(32);
+            byte[] identityBytes = userIdentity.getEmailAddress().getBytes(StandardCharsets.UTF_8);
+            byte[] passwordBytes = RandomUtils.bytes(20);
+
+            SRP6VerifierGenerator srp6VerifierGenerator = srp6Factory.getSrp6VerifierGenerator();
+            BigInteger srpVerifierBigInteger = srp6VerifierGenerator.generateVerifier(saltBytes, identityBytes,
+                passwordBytes);
+
+            String srpSaltHex = new BigInteger(1, saltBytes).toString(16);
+            String srpVerifierHex = srpVerifierBigInteger.toString(16);
+            PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingEngine.getLatestAlgorithm();
+            UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity,
                 srpSaltHex, srpVerifierHex, passwordStretchingAlgorithm);
             userIdentity.setAuthentications(Set.of(userAuthentication));
         }
 
-        UserAuthentication currentAuthentication;
-        if (existingUser) {
-            currentAuthentication =
-                userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
-                    .orElseThrow();
-        } else {
-            currentAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
-        }
-
+        UserAuthentication currentAuthentication = UserIdentityHelper.getCurrentAuthentication(userIdentity);
         BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
-        RequestBoundaryCrossingSRP6Server srp = SRP6Factory.getSrp6Server(srpVerifierBigInteger);
+        RequestBoundaryCrossingSRP6Server srp = srp6Factory.getSrp6Server(srpVerifierBigInteger);
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
         String serverEphemeralHex = serverEphemeralBigInteger.toString(16);
@@ -249,15 +234,13 @@ public class AuthenticationService {
     public PasswordAuthenticationCompleteV1Response passwordAuthenticationCompleteV1(PasswordAuthenticationCompleteV1Request request) throws NoSuchPaddingException, InvalidKeyException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, IOException {
         String emailAddress = request.getEmailAddress().toLowerCase();
 
-        UserIdentity userIdentity = userIdentityRepository.findByEmailAddress(emailAddress)
+        UserIdentity userIdentity = userIdentityRepository.findByEmailAddress(emailAddress, 2)
             .orElseThrow(() -> new UnauthorizedException("UserIdentity not found."));
-        UserAuthentication currentAuthentication =
-            userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
-                .orElseThrow();
+        UserAuthentication currentAuthentication = UserIdentityHelper.getCurrentAuthentication(userIdentity);
 
         BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
-        RequestBoundaryCrossingSRP6Server srp = SRP6Factory.getSrp6Server(srpVerifierBigInteger);
+        RequestBoundaryCrossingSRP6Server srp = srp6Factory.getSrp6Server(srpVerifierBigInteger);
 
         Set<UserTemporarySRPData> userTemporarySrpDatas = currentAuthentication.getUserTemporarySrpDatas();
         userTemporarySrpDatas.removeIf(ExpirationUtils::isExpiredNow);
@@ -280,6 +263,8 @@ public class AuthenticationService {
 
         BigInteger serverEphemeralBigInteger = new BigInteger(foundUserTemporarySrpData.getServerEphemeralHex(), 16);
         srp.setB(serverEphemeralBigInteger);
+
+        userTemporarySRPDataRepository.delete(foundUserTemporarySrpData);
 
         BigInteger clientEphemeralBigInteger = new BigInteger(request.getClientEphemeralHex(), 16);
         try {
@@ -317,13 +302,14 @@ public class AuthenticationService {
         byte[] authenticationSessionKeyBytes = BigIntegerToByteArray.convert(authenticationSessionKeyBigInteger);
         AuthenticationSession authenticationSession =
             AuthenticationSessionHelper.create(authenticationSessionKeyBytes);
-        currentAuthentication.getAuthenticationSessions().add(authenticationSession);
+        authenticationSession.setUserAuthentication(currentAuthentication);
 
-        userIdentityRepository.save(userIdentity);
+        AuthenticationSession persistedAuthenticationSession =
+            authenticationSessionRepository.save(authenticationSession);
 
         String serverProofHex = serverProofBigInteger.toString(16);
 
-        String authenticationSessionId = authenticationSession.getId();
+        String authenticationSessionId = persistedAuthenticationSession.getId();
         byte[] authenticationSessionIdBytes = authenticationSessionId.getBytes(StandardCharsets.UTF_8);
         DiplomatiqAEAD authenticationSessionIdAead = new DiplomatiqAEAD(authenticationSessionIdBytes);
         byte[] authenticationSessionIdAeadBytes = authenticationSessionIdAead.toBytes(authenticationSessionKeyBytes);
@@ -333,12 +319,13 @@ public class AuthenticationService {
     }
 
     public void elevateAuthenticationSessionInitV1() throws IOException {
+        String authenticationSessionid = getCurrentAuthenticationDetails().getAuthenticationId();
         AuthenticationSession authenticationSession = authenticationSessionRepository
-            .findById(getCurrentAuthenticationDetails().getAuthenticationId())
+            .findById(authenticationSessionid)
             .orElseThrow();
 
         AuthenticationSessionMultiFactorElevationRequest elevationRequest =
-            authenticationSessionMultiFactorElevationRequestHelper.create();
+            AuthenticationSessionMultiFactorElevationRequestHelper.create();
         elevationRequest.setAuthenticationSession(authenticationSession);
         authenticationSessionMultiFactorElevationRequestRepository.save(elevationRequest);
 
@@ -365,14 +352,12 @@ public class AuthenticationService {
     }
 
     public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
-        UserIdentity userIdentity = getCurrentUserIdentity();
-        UserAuthentication currentAuthentication =
-            userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
-                .orElseThrow();
+        UserIdentity userIdentity = userIdentityRepository.findById(getCurrentUserIdentity().getId(), 2).orElseThrow();
+        UserAuthentication currentAuthentication = UserIdentityHelper.getCurrentAuthentication(userIdentity);
 
         BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
-        RequestBoundaryCrossingSRP6Server srp = SRP6Factory.getSrp6Server(srpVerifierBigInteger);
+        RequestBoundaryCrossingSRP6Server srp = srp6Factory.getSrp6Server(srpVerifierBigInteger);
 
         BigInteger serverEphemeralBigInteger = srp.generateServerCredentials();
         String serverEphemeralHex = serverEphemeralBigInteger.toString(16);
@@ -387,18 +372,18 @@ public class AuthenticationService {
         userIdentityRepository.save(userIdentity);
 
         String srpSaltHex = currentAuthentication.getSrpSaltHex();
-        return new ElevateRegularSessionInitV1Response(serverEphemeralHex, srpSaltHex);
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm =
+            currentAuthentication.getPasswordStretchingAlgorithm();
+        return new ElevateRegularSessionInitV1Response(serverEphemeralHex, srpSaltHex, passwordStretchingAlgorithm);
     }
 
     public void elevateRegularSessionCompleteV1(ElevateRegularSessionCompleteV1Request request) {
-        UserIdentity userIdentity = getCurrentUserIdentity();
-        UserAuthentication currentAuthentication =
-            userAuthenticationRepository.findById(userIdentityHelper.getCurrentAuthentication(userIdentity).getId())
-                .orElseThrow();
+        UserIdentity userIdentity = userIdentityRepository.findById(getCurrentUserIdentity().getId(), 2).orElseThrow();
+        UserAuthentication currentAuthentication = UserIdentityHelper.getCurrentAuthentication(userIdentity);
 
         BigInteger srpVerifierBigInteger = new BigInteger(currentAuthentication.getSrpVerifierHex(), 16);
 
-        RequestBoundaryCrossingSRP6Server srp = SRP6Factory.getSrp6Server(srpVerifierBigInteger);
+        RequestBoundaryCrossingSRP6Server srp = srp6Factory.getSrp6Server(srpVerifierBigInteger);
 
         Set<UserTemporarySRPData> userTemporarySrpDatas = currentAuthentication.getUserTemporarySrpDatas();
         userTemporarySrpDatas.removeIf(ExpirationUtils::isExpiredNow);
@@ -416,13 +401,13 @@ public class AuthenticationService {
             throw new UnauthorizedException("Previous, still valid server ephemeral value not found.");
         }
 
-        userAuthenticationRepository.save(currentAuthentication);
-
         BigInteger serverSecretBigInteger = new BigInteger(foundUserTemporarySrpData.getServerSecretHex(), 16);
         srp.setb(serverSecretBigInteger);
 
         BigInteger serverEphemeralBigInteger = new BigInteger(foundUserTemporarySrpData.getServerEphemeralHex(), 16);
         srp.setB(serverEphemeralBigInteger);
+
+        userTemporarySRPDataRepository.delete(foundUserTemporarySrpData);
 
         BigInteger clientEphemeralBigInteger = new BigInteger(request.getClientEphemeralHex(), 16);
         try {
@@ -453,7 +438,7 @@ public class AuthenticationService {
         Session session = sessionRepository.findById(getCurrentAuthenticationDetails().getAuthenticationId())
             .orElseThrow();
 
-        SessionMultiFactorElevationRequest elevationRequest = sessionMultiFactorElevationRequestHelper.create();
+        SessionMultiFactorElevationRequest elevationRequest = SessionMultiFactorElevationRequestHelper.create();
         elevationRequest.setSession(session);
         sessionMultiFactorElevationRequestRepository.save(elevationRequest);
 
@@ -493,9 +478,9 @@ public class AuthenticationService {
             userIdentityRepository.findByEmailAddress(request.getEmailAddress().toLowerCase());
         if (userIdentityOptional.isPresent()) {
             UserIdentity userIdentity = userIdentityOptional.get();
-            UserAuthentication userAuthentication = userIdentityHelper.getCurrentAuthentication(userIdentity);
+            UserAuthentication userAuthentication = UserIdentityHelper.getCurrentAuthentication(userIdentity);
             UserAuthenticationResetRequest userAuthenticationResetRequest =
-                userAuthenticationResetRequestHelper.create();
+                UserAuthenticationResetRequestHelper.create();
             userAuthenticationResetRequest.setUserAuthentication(userAuthentication);
             userAuthenticationResetRequestRepository.save(userAuthenticationResetRequest);
             emailSendingEngine.sendPasswordResetEmail(userAuthenticationResetRequest);
@@ -504,7 +489,7 @@ public class AuthenticationService {
 
     public void resetPasswordV1(ResetPasswordV1Request request) {
         Optional<UserAuthenticationResetRequest> userAuthenticationResetRequestOptional =
-            userAuthenticationResetRequestRepository.findByRequestKey(request.getPasswordResetKey());
+            userAuthenticationResetRequestRepository.findByRequestKey(request.getPasswordResetKey(), 3);
         if (userAuthenticationResetRequestOptional.isPresent()) {
             UserAuthenticationResetRequest userAuthenticationResetRequest =
                 userAuthenticationResetRequestOptional.get();
@@ -515,12 +500,8 @@ public class AuthenticationService {
             String srpSaltHex = request.getSrpSaltHex();
             String srpVerifierHex = request.getSrpVerifierHex();
 
-            UserAuthentication userAuthentication =
-                userAuthenticationRepository.findById(userAuthenticationResetRequest.getUserAuthentication().getId())
-                    .orElseThrow();
-            UserIdentity userIdentity = userIdentityRepository.findById(userAuthentication.getUserIdentity().getId())
-                .orElseThrow();
-            UserAuthentication newUserAuthentication = userAuthenticationHelper.create(userIdentity,
+            UserIdentity userIdentity = userAuthenticationResetRequest.getUserAuthentication().getUserIdentity();
+            UserAuthentication newUserAuthentication = UserAuthenticationHelper.create(userIdentity,
                 srpSaltHex, srpVerifierHex, request.getPasswordStretchingAlgorithm());
             userIdentity.getAuthentications().add(newUserAuthentication);
 
@@ -550,58 +531,45 @@ public class AuthenticationService {
 
     public UserIdentity verifyAuthenticationSessionCredentials(String authenticationSessionId) {
         AuthenticationSession authenticationSession =
-            authenticationSessionRepository.findById(authenticationSessionId).orElseThrow();
+            authenticationSessionRepository.findById(authenticationSessionId, 2).orElseThrow();
 
         if (ExpirationUtils.isExpiredNow(authenticationSession)) {
             throw new UnauthorizedException("Authentication session expired.");
         }
 
-        UserAuthentication userAuthentication =
-            userAuthenticationRepository.findById(authenticationSession.getUserAuthentication().getId()).orElseThrow();
-        UserIdentity userIdentity =
-            userIdentityRepository.findById(userAuthentication.getUserIdentity().getId()).orElseThrow();
-
-        return userIdentity;
+        return authenticationSession.getUserAuthentication().getUserIdentity();
     }
 
     public UserIdentity verifyDeviceCredentials(String deviceId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
-        UserIdentity userIdentity = userIdentityRepository.findById(userDevice.getUserIdentity().getId()).orElseThrow();
-        return userIdentity;
+        return userDevice.getUserIdentity();
     }
 
     public UserIdentity verifySessionCredentials(String deviceId, String sessionId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
-        Session session = sessionRepository.findById(sessionId).orElseThrow();
 
-        if (!userDevice.getSession().equals(session)) {
+        if (!userDevice.getSession().getId().equals(sessionId)) {
             throw new UnauthorizedException("Device and session are unrelated.");
         }
 
-        if (ExpirationUtils.isExpiredNow(session)) {
+        if (ExpirationUtils.isExpiredNow(userDevice.getSession())) {
             throw new UnauthorizedException("Session expired.");
         }
 
-        UserIdentity userIdentity = userIdentityRepository.findById(userDevice.getUserIdentity().getId()).orElseThrow();
-
-        return userIdentity;
+        return userDevice.getUserIdentity();
     }
 
     public boolean sessionHasAssuranceLevel(String sessionId, SessionAssuranceLevel requiredAssuranceLevel) {
         Session session = sessionRepository.findById(sessionId)
             .orElseThrow(() -> new UnauthorizedException("No session found with the given ID."));
 
-        if (session.getAssuranceLevel().getNumericAssuranceLevel() < requiredAssuranceLevel.getNumericAssuranceLevel()) {
-            return false;
-        }
-
         if (ExpirationUtils.isExpiredNow(session.getAssuranceLevelExpirationTime())) {
             SessionHelper.downgradeSessionToRegular(session);
             sessionRepository.save(session);
-            return false;
+            return requiredAssuranceLevel.equals(SessionAssuranceLevel.RegularSession);
         }
 
-        return true;
+        return session.getAssuranceLevel().getNumericAssuranceLevel() >= requiredAssuranceLevel.getNumericAssuranceLevel();
     }
 
     public boolean authenticationSessionHasAssuranceLevel(String authenticationSessionId,
@@ -609,17 +577,13 @@ public class AuthenticationService {
         AuthenticationSession authenticationSession = authenticationSessionRepository.findById(authenticationSessionId)
             .orElseThrow(() -> new UnauthorizedException("No authentication session found with the given ID."));
 
-        if (authenticationSession.getAssuranceLevel().getNumericAssuranceLevel() < requiredAssuranceLevel.getNumericAssuranceLevel()) {
-            return false;
-        }
-
         if (ExpirationUtils.isExpiredNow(authenticationSession.getAssuranceLevelExpirationTime())) {
             AuthenticationSessionHelper.downgradeAuthenticationSessionToPasswordElevated(authenticationSession);
             authenticationSessionRepository.save(authenticationSession);
-            return false;
+            return requiredAssuranceLevel.equals(SessionAssuranceLevel.PasswordElevatedSession);
         }
 
-        return true;
+        return authenticationSession.getAssuranceLevel().getNumericAssuranceLevel() >= requiredAssuranceLevel.getNumericAssuranceLevel();
     }
 
     private AuthenticationToken getCurrentAuthenticatedAuthenticationToken() {

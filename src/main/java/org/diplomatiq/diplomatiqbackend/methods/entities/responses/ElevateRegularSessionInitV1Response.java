@@ -1,6 +1,7 @@
 package org.diplomatiq.diplomatiqbackend.methods.entities.responses;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingAlgorithm;
 
 import javax.validation.constraints.NotBlank;
 
@@ -38,10 +39,19 @@ public class ElevateRegularSessionInitV1Response {
     @NotBlank
     private String srpSaltHex;
 
+    @Schema(
+        description = "The hash function used for calculating the exponent of the SRP verifier (v)",
+        example = "Argon2_v1",
+        required = true
+    )
+    private PasswordStretchingAlgorithm passwordStretchingAlgorithm;
+
     public ElevateRegularSessionInitV1Response(@NotBlank String serverEphemeralHex,
-                                               @NotBlank String srpSaltHex) {
+                                               @NotBlank String srpSaltHex,
+                                               PasswordStretchingAlgorithm passwordStretchingAlgorithm) {
         this.serverEphemeralHex = serverEphemeralHex;
         this.srpSaltHex = srpSaltHex;
+        this.passwordStretchingAlgorithm = passwordStretchingAlgorithm;
     }
 
     public String getServerEphemeralHex() {
@@ -50,5 +60,9 @@ public class ElevateRegularSessionInitV1Response {
 
     public String getSrpSaltHex() {
         return srpSaltHex;
+    }
+
+    public PasswordStretchingAlgorithm getPasswordStretchingAlgorithm() {
+        return passwordStretchingAlgorithm;
     }
 }

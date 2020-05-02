@@ -11,7 +11,7 @@ public class AuthenticationDetails {
         this.authenticationId = authenticationId;
     }
 
-    public DiplomatiqAuthenticationScheme diplomatiqAuthenticationScheme() {
+    public DiplomatiqAuthenticationScheme getDiplomatiqAuthenticationScheme() {
         return authenticationScheme;
     }
 

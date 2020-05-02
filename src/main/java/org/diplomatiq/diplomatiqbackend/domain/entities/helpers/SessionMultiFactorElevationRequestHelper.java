@@ -12,7 +12,7 @@ public class SessionMultiFactorElevationRequestHelper {
     private static final Duration SESSION_MULTI_FACTOR_ELEVATION_REQUEST_VALIDITY = Duration.ofMinutes(5);
     private static final int SESSION_MULTI_FACTOR_ELEVATION_REQUEST_CODE_LENGTH = 8;
 
-    public SessionMultiFactorElevationRequest create() {
+    public static SessionMultiFactorElevationRequest create() {
         SessionMultiFactorElevationRequest sessionMultiFactorElevationRequest =
             new SessionMultiFactorElevationRequest();
         ExpirationUtils.setExpirationLifeSpan(sessionMultiFactorElevationRequest,

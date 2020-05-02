@@ -2,27 +2,16 @@ package org.diplomatiq.diplomatiqbackend.domain.entities.helpers;
 
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserAuthentication;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
-import org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching.PasswordStretchingEngine;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.RandomUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.NoSuchElementException;
 
-@Component
 public class UserIdentityHelper {
     private static final int EMAIL_VALIDATION_KEY_LENGTH = 150;
 
-    @Autowired
-    PasswordStretchingEngine passwordStretchingEngine;
-
-    @Autowired
-    UserAuthenticationHelper userAuthenticationHelper;
-
-    @Autowired
-    UserDeviceHelper userDeviceHelper;
-
-    public UserIdentity create(String emailAddress, String firstName, String lastName) {
+    public static UserIdentity create(String emailAddress, String firstName, String lastName) {
         UserIdentity userIdentity = new UserIdentity();
 
         userIdentity.setEmailAddress(emailAddress);
@@ -34,12 +23,12 @@ public class UserIdentityHelper {
         return userIdentity;
     }
 
-    public UserAuthentication getCurrentAuthentication(UserIdentity userIdentity) {
+    public static UserAuthentication getCurrentAuthentication(UserIdentity userIdentity) {
         return Collections.max(userIdentity.getAuthentications(),
             Comparator.comparingLong(UserAuthentication::getVersion));
     }
 
-    public long getNextAuthenticationVersion(UserIdentity userIdentity) {
+    public static long getNextAuthenticationVersion(UserIdentity userIdentity) {
         try {
             UserAuthentication userAuthentication = getCurrentAuthentication(userIdentity);
             return userAuthentication.getVersion() + 1;

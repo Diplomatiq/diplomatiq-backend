@@ -1,11 +1,8 @@
 package org.diplomatiq.diplomatiqbackend.engines.crypto.passwordstretching;
 
-import org.springframework.stereotype.Component;
-
 import java.util.Collections;
 import java.util.Map;
 
-@Component
 public class PasswordStretchingEngine {
     private static final Map<Integer, PasswordStretchingAlgorithm> passwordStretchingAlgorithmByVersionMap =
         Collections.unmodifiableMap(
@@ -14,7 +11,7 @@ public class PasswordStretchingEngine {
             )
         );
 
-    public PasswordStretchingAlgorithm getLatestAlgorithm() {
+    public static PasswordStretchingAlgorithm getLatestAlgorithm() {
         return passwordStretchingAlgorithmByVersionMap.get(
             Collections.max(passwordStretchingAlgorithmByVersionMap.keySet())
         );

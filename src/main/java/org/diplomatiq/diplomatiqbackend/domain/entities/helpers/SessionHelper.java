@@ -3,13 +3,11 @@ package org.diplomatiq.diplomatiqbackend.domain.entities.helpers;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.Session;
 import org.diplomatiq.diplomatiqbackend.domain.entities.utils.ExpirationUtils;
 import org.diplomatiq.diplomatiqbackend.methods.attributes.SessionAssuranceLevel;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
-@Component
 public class SessionHelper {
     private static final Duration SESSION_VALIDITY = Duration.ofHours(1);
     private static final Duration PASSWORD_ELEVATED_LEVEL_VALIDITY = Duration.ofMinutes(10);

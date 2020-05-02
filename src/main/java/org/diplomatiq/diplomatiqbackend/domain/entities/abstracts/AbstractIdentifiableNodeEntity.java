@@ -13,6 +13,10 @@ public abstract class AbstractIdentifiableNodeEntity {
         return id;
     }
 
+    public final void setId(String id) {
+        this.id = id;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {

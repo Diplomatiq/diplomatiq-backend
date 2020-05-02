@@ -2,11 +2,9 @@ package org.diplomatiq.diplomatiqbackend.domain.entities.helpers;
 
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserTemporarySRPData;
 import org.diplomatiq.diplomatiqbackend.domain.entities.utils.ExpirationUtils;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
-@Component
 public class UserTemporarySRPDataHelper {
     private static final Duration USER_TEMPORARY_SRP_DATA_VALIDITY = Duration.ofMinutes(2);
 

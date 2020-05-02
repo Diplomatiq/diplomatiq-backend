@@ -3,13 +3,11 @@ package org.diplomatiq.diplomatiqbackend.domain.entities.helpers;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.AuthenticationSession;
 import org.diplomatiq.diplomatiqbackend.domain.entities.utils.ExpirationUtils;
 import org.diplomatiq.diplomatiqbackend.methods.attributes.SessionAssuranceLevel;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
-@Component
 public class AuthenticationSessionHelper {
     private static final Duration AUTHENTICATION_SESSION_VALIDITY = Duration.ofMinutes(10);
     private static final Duration MULTI_FACTOR_ELEVATED_LEVEL_VALIDITY = Duration.ofMinutes(5);

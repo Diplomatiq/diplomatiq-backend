@@ -4,11 +4,9 @@ import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserDevice;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.DeviceContainerKeyGenerator;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.DeviceKeyGenerator;
 import org.diplomatiq.diplomatiqbackend.utils.crypto.random.SessionTokenGenerator;
-import org.springframework.stereotype.Component;
 
-@Component
 public class UserDeviceHelper {
-    public UserDevice create() {
+    public static UserDevice create() {
         UserDevice userDevice = new UserDevice();
 
         userDevice.setDeviceKey(DeviceKeyGenerator.generate());
