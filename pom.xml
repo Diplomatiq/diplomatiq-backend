@@ -150,13 +150,13 @@
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-                    <execution>
-                        <id>prepare-agent-integration</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>prepare-agent-integration</goal>
-                        </goals>
-                    </execution>
+<!--                    <execution>-->
+<!--                        <id>prepare-agent-integration</id>-->
+<!--                        <phase>pre-integration-test</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>prepare-agent-integration</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
