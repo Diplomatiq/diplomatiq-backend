@@ -125,8 +125,14 @@ public class DiplomatiqHeaders {
         AllRequiredHeaders = Collections.unmodifiableSet(allRequiredHeaders);
     }
 
-    public static final Set<String> AllKnownHeaders =
-        Arrays.stream(KnownHeader.values()).map(KnownHeader::name).collect(Collectors.toUnmodifiableSet());
+    public static final Set<String> AllKnownHeaders;
+
+    static {
+        Set<String> allKnownHeaders =
+            Arrays.stream(KnownHeader.values()).map(KnownHeader::name).collect(Collectors.toSet());
+        allKnownHeaders.add("Content-Type");
+        AllKnownHeaders = Collections.unmodifiableSet(allKnownHeaders);
+    }
 
     public static final Map<String, String> AllRequiredHeadersWithDescription = AllRequiredHeaders.stream().collect(
         Collectors.toUnmodifiableMap(
