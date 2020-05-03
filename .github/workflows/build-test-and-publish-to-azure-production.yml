@@ -1,4 +1,4 @@
-name: Build, test and publish to Azure (production)
+name: Build and publish to Azure (production)
 
 on:
     push:
@@ -8,21 +8,25 @@ on:
 jobs:
     build-test-and-publish:
         name: 'Build, test and publish to Azure'
-        runs-on: windows-latest
+        runs-on: ubuntu-latest
 
         steps:
             - name: Checkout repository
               uses: actions/checkout@v2
+            - uses: actions/cache@v1
+              with:
+                  path: ~/.m2/repository
+                  key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-maven-
             - name: Set up Java version
               uses: actions/setup-java@v1
               with:
                   java-version: 11
                   java-package: jdk
                   architecture: x64
-            - name: Set up Neo4j in Docker
-              run: docker run -d -p 7687:7687 --env=NEO4J_AUTH=neo4j/secret neo4j:latest
             - name: Package distribution deployment artefact
-              run: ./mvnw.cmd clean package
+              run: ./mvnw clean package
               env:
                   NEO4J_ENCRYPTION_KEY_V1: VGhpcyBpcyBhIGR1bW1tbW1tbW1tbW1tbW15IGtleS4=
             - name: Create distribution folder
