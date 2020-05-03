@@ -39,7 +39,7 @@ public class RegistrationServiceTests {
         String lastName = DummyData.USER_LAST_NAME;
         String srpSaltHex = new BigInteger(1, RandomUtils.bytes(32)).toString(16);
         String srpVerifierHex = new BigInteger(1, RandomUtils.bytes(1024)).toString(16);
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
 
         RegisterUserV1Request request = new RegisterUserV1Request();
         request.setEmailAddress(emailAddress);
@@ -73,7 +73,7 @@ public class RegistrationServiceTests {
         UserAuthentication userAuthentication = savedUserIdentity.getAuthentications().iterator().next();
         assertEquals(srpSaltHex, userAuthentication.getSrpSaltHex());
         assertEquals(srpVerifierHex, userAuthentication.getSrpVerifierHex());
-        assertEquals(PasswordStretchingAlgorithm.Argon2_v1,
+        assertEquals(PasswordStretchingAlgorithm.Scrypt_v1,
             userAuthentication.getPasswordStretchingAlgorithm());
 
         UserIdentity emailedUserIdentity = capturedUserIdentities.remove(0);
@@ -89,7 +89,7 @@ public class RegistrationServiceTests {
         String lastName = "Sepiol";
         String srpSaltHex = new BigInteger(1, RandomUtils.bytes(32)).toString(16);
         String srpVerifierHex = new BigInteger(1, RandomUtils.bytes(1024)).toString(16);
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
 
         RegisterUserV1Request request = new RegisterUserV1Request();
         request.setEmailAddress(emailAddress);

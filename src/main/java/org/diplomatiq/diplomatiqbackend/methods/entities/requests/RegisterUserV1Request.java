@@ -67,7 +67,7 @@ public class RegisterUserV1Request {
 
     @Schema(
         description = "The hash function used for calculating the exponent of the SRP verifier (v)",
-        example = "Argon2_v1",
+        example = "Scrypt_v1",
         required = true
     )
     private PasswordStretchingAlgorithm passwordStretchingAlgorithm;

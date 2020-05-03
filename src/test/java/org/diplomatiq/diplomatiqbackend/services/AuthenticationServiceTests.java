@@ -372,7 +372,7 @@ public class AuthenticationServiceTests {
                 DummyData.USER_LAST_NAME);
 
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, "", "",
-            PasswordStretchingAlgorithm.Argon2_v1);
+            PasswordStretchingAlgorithm.Scrypt_v1);
         userAuthentication.setUserIdentity(userIdentity);
 
         AuthenticationSession authenticationSession = AuthenticationSessionHelper.create(RandomUtils.bytes(32));
@@ -460,7 +460,7 @@ public class AuthenticationServiceTests {
         BigInteger srpVerifierBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpVerifierHex = srpVerifierBigInteger.toString(16);
 
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, srpSaltHex,
             srpVerifierHex, passwordStretchingAlgorithm);
         userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -553,7 +553,7 @@ public class AuthenticationServiceTests {
         String srpSaltHex = srpSaltBigInteger.toString(16);
         BigInteger srpVerifierBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpVerifierHex = srpVerifierBigInteger.toString(16);
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, srpSaltHex,
             srpVerifierHex, passwordStretchingAlgorithm);
         userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -657,7 +657,7 @@ public class AuthenticationServiceTests {
         String srpSaltHex = srpSaltBigInteger.toString(16);
         BigInteger srpVerifierBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpVerifierHex = srpVerifierBigInteger.toString(16);
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, srpSaltHex,
             srpVerifierHex, passwordStretchingAlgorithm);
         userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -707,7 +707,7 @@ public class AuthenticationServiceTests {
         String srpSaltHex = srpSaltBigInteger.toString(16);
         BigInteger srpVerifierBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpVerifierHex = srpVerifierBigInteger.toString(16);
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, srpSaltHex,
             srpVerifierHex, passwordStretchingAlgorithm);
         userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -867,7 +867,7 @@ public class AuthenticationServiceTests {
         BigInteger srpVerifierBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpVerifierHex = srpVerifierBigInteger.toString(16);
 
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, srpSaltHex,
             srpVerifierHex, passwordStretchingAlgorithm);
         userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -933,7 +933,7 @@ public class AuthenticationServiceTests {
         String srpSaltHex = srpSaltBigInteger.toString(16);
         BigInteger srpVerifierBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpVerifierHex = srpVerifierBigInteger.toString(16);
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, srpSaltHex,
             srpVerifierHex, passwordStretchingAlgorithm);
         userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -1016,7 +1016,7 @@ public class AuthenticationServiceTests {
         String srpSaltHex = srpSaltBigInteger.toString(16);
         BigInteger srpVerifierBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpVerifierHex = srpVerifierBigInteger.toString(16);
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, srpSaltHex,
             srpVerifierHex, passwordStretchingAlgorithm);
         userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -1075,7 +1075,7 @@ public class AuthenticationServiceTests {
         String srpSaltHex = srpSaltBigInteger.toString(16);
         BigInteger srpVerifierBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpVerifierHex = srpVerifierBigInteger.toString(16);
-        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm passwordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, srpSaltHex,
             srpVerifierHex, passwordStretchingAlgorithm);
         userIdentity.setAuthentications(Set.of(userAuthentication));
@@ -1260,7 +1260,7 @@ public class AuthenticationServiceTests {
         UserIdentity userIdentity = UserIdentityHelper.create(DummyData.USER_EMAIL, DummyData.USER_FIRST_NAME,
             DummyData.USER_LAST_NAME);
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, "cafe", "deadbeef",
-            PasswordStretchingAlgorithm.Argon2_v1);
+            PasswordStretchingAlgorithm.Scrypt_v1);
         userAuthentication.setId(RandomUtils.alphanumericString(32));
         userIdentity.setAuthentications(Set.of(userAuthentication));
 
@@ -1314,7 +1314,7 @@ public class AuthenticationServiceTests {
             DummyData.USER_LAST_NAME);
 
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, "cafe", "deadbeef",
-            PasswordStretchingAlgorithm.Argon2_v1);
+            PasswordStretchingAlgorithm.Scrypt_v1);
         userAuthentication.setUserIdentity(userIdentity);
         userIdentity.getAuthentications().add(userAuthentication);
 
@@ -1334,7 +1334,7 @@ public class AuthenticationServiceTests {
         String newVerifier = "feebdaed";
         request.setSrpVerifierHex(newVerifier);
 
-        PasswordStretchingAlgorithm newPasswordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm newPasswordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         request.setPasswordStretchingAlgorithm(newPasswordStretchingAlgorithm);
 
         authenticationService.resetPasswordV1(request);
@@ -1384,7 +1384,7 @@ public class AuthenticationServiceTests {
         String newVerifier = "feebdaed";
         request.setSrpVerifierHex(newVerifier);
 
-        PasswordStretchingAlgorithm newPasswordStretchingAlgorithm = PasswordStretchingAlgorithm.Argon2_v1;
+        PasswordStretchingAlgorithm newPasswordStretchingAlgorithm = PasswordStretchingAlgorithm.Scrypt_v1;
         request.setPasswordStretchingAlgorithm(newPasswordStretchingAlgorithm);
 
         assertThrows(UnauthorizedException.class, () -> authenticationService.resetPasswordV1(request), "Password " +
@@ -1407,7 +1407,7 @@ public class AuthenticationServiceTests {
         request.setPasswordResetKey(invalidRequestKey);
         request.setSrpSaltHex("cafe");
         request.setSrpVerifierHex("deadbeef");
-        request.setPasswordStretchingAlgorithm(PasswordStretchingAlgorithm.Argon2_v1);
+        request.setPasswordStretchingAlgorithm(PasswordStretchingAlgorithm.Scrypt_v1);
 
         authenticationService.resetPasswordV1(request);
 
@@ -1522,7 +1522,7 @@ public class AuthenticationServiceTests {
             DummyData.USER_LAST_NAME);
 
         UserAuthentication userAuthentication = UserAuthenticationHelper.create(userIdentity, "cafe", "deadbeef",
-            PasswordStretchingAlgorithm.Argon2_v1);
+            PasswordStretchingAlgorithm.Scrypt_v1);
         userAuthentication.setUserIdentity(userIdentity);
 
         AuthenticationSession authenticationSession = AuthenticationSessionHelper.create(RandomUtils.bytes(32));

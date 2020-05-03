@@ -7,7 +7,7 @@ public class PasswordStretchingEngine {
     private static final Map<Integer, PasswordStretchingAlgorithm> passwordStretchingAlgorithmByVersionMap =
         Collections.unmodifiableMap(
             Map.ofEntries(
-                Map.entry(1, PasswordStretchingAlgorithm.Argon2_v1)
+                Map.entry(1, PasswordStretchingAlgorithm.Scrypt_v1)
             )
         );
 
