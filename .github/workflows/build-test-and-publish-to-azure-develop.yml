@@ -26,7 +26,7 @@ jobs:
                   java-package: jdk
                   architecture: x64
             - name: Package distribution deployment artefact
-              run: ./mvnw clean package
+              run: ./mvnw -DskipTests clean package
               env:
                   NEO4J_ENCRYPTION_KEY_V1: VGhpcyBpcyBhIGR1bW1tbW1tbW1tbW1tbW15IGtleS4=
             - name: Create distribution folder
