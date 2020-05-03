@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.*;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.GetDeviceContainerKeyV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationCompleteV1Response;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.PasswordAuthenticationInitV1Response;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
@@ -60,9 +61,9 @@ public class UnauthenticatedMethods {
         name = "getDeviceContainerKeyV1",
         path = "get-device-container-key-v1",
         method = RequestMethod.GET,
-        produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public byte[] getDeviceContainerKeyV1(
+    public GetDeviceContainerKeyV1Response getDeviceContainerKeyV1(
         @Parameter(
             description = "The ID of the user's device",
             example = "QKbIyfVHfCJ1jWAAhjwIgcFFbYcTV556"

@@ -78,9 +78,11 @@ public class AuthenticationService {
     @Autowired
     private UserAuthenticationResetRequestRepository userAuthenticationResetRequestRepository;
 
-    public byte[] getDeviceContainerKeyV1(String deviceId) {
+    public GetDeviceContainerKeyV1Response getDeviceContainerKeyV1(String deviceId) {
         UserDevice userDevice = userDeviceRepository.findById(deviceId).orElse(UserDeviceHelper.create());
-        return userDevice.getDeviceContainerKey();
+        byte[] deviceContainerKeyBytes = userDevice.getDeviceContainerKey();
+        String deviceContainerKeyBase64 = Base64.getEncoder().encodeToString(deviceContainerKeyBytes);
+        return new GetDeviceContainerKeyV1Response(deviceContainerKeyBase64);
     }
 
     public GetSessionV1Response getSessionV1(GetSessionV1Request request) throws NoSuchPaddingException,

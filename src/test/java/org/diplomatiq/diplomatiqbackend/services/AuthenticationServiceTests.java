@@ -89,12 +89,15 @@ public class AuthenticationServiceTests {
         userDevice.setDeviceContainerKey(RandomUtils.bytes(32));
         when(userDeviceRepository.findById(userDevice.getId())).thenReturn(Optional.of(userDevice));
 
-        byte[] deviceContainerKey = authenticationService.getDeviceContainerKeyV1(userDevice.getId());
+        GetDeviceContainerKeyV1Response response = authenticationService.getDeviceContainerKeyV1(userDevice.getId());
 
         verify(userDeviceRepository, times(1)).findById(userDevice.getId());
         verifyNoMoreInteractions(userDeviceRepository);
 
-        assertArrayEquals(userDevice.getDeviceContainerKey(), deviceContainerKey);
+        String deviceContainerKeyBase64 = response.getDeviceContainerKeyBase64();
+        byte[] deviceContainerKeyBytes = Base64.getDecoder().decode(deviceContainerKeyBase64);
+
+        assertArrayEquals(userDevice.getDeviceContainerKey(), deviceContainerKeyBytes);
     }
 
     @Test
@@ -102,13 +105,15 @@ public class AuthenticationServiceTests {
         String nonExistingDeviceId = "nonExistingDeviceId";
         when(userDeviceRepository.findById(nonExistingDeviceId)).thenReturn(Optional.empty());
 
-        byte[] deviceContainerKey = authenticationService.getDeviceContainerKeyV1(nonExistingDeviceId);
+        GetDeviceContainerKeyV1Response response = authenticationService.getDeviceContainerKeyV1(nonExistingDeviceId);
 
         verify(userDeviceRepository, times(1)).findById(nonExistingDeviceId);
         verifyNoMoreInteractions(userDeviceRepository);
 
-        assertNotNull(deviceContainerKey);
-        assertEquals(32, deviceContainerKey.length);
+        String deviceContainerKeyBase64 = response.getDeviceContainerKeyBase64();
+        byte[] deviceContainerKeyBytes = Base64.getDecoder().decode(deviceContainerKeyBase64);
+
+        assertEquals(32, deviceContainerKeyBytes.length);
     }
 
     @Test
