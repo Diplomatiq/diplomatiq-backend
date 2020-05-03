@@ -1,4 +1,4 @@
-package org.diplomatiq.diplomatiqbackend.methods.controllers.nonapi;
+package org.diplomatiq.diplomatiqbackend.methods.controllers.unauthenticated;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -92,7 +92,8 @@ public class UnauthenticatedMethods {
         @Valid
         @RequestBody
             PasswordAuthenticationCompleteV1Request request
-    ) throws NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException, IOException {
+    ) throws NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException,
+        IllegalBlockSizeException, BadPaddingException, InvalidKeyException, IOException {
         return authenticationService.passwordAuthenticationCompleteV1(request);
     }
 
