@@ -17,8 +17,8 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * AEAD (Authenticated Encryption with Associated Data) structure with binary serialization and deserialization
- * features.
+ * Lightweight AEAD (Authenticated Encryption with Associated Data) structure
+ * with binary serialization and deserialization features.
  * <p>
  * Serialization scheme:
  * HEADER:
