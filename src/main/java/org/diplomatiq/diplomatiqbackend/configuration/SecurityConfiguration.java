@@ -29,6 +29,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @EnableWebSecurity
@@ -179,7 +180,9 @@ public class SecurityConfiguration {
             http.cors(cors -> {
                 CorsConfigurationSource defaultCorsConfigurationSource = httpServletRequest -> {
                     CorsConfiguration defaultCorsConfiguration = new CorsConfiguration();
-                    defaultCorsConfiguration.setAllowedOrigins(Collections.singletonList("https://app.diplomatiq.org"));
+                    defaultCorsConfiguration.setAllowedOrigins(
+                        List.of("https://app.diplomatiq.org", "http://localhost:4200")
+                    );
                     defaultCorsConfiguration.setAllowedMethods(new ArrayList<>(DiplomatiqMethods.AllowedMethods));
                     defaultCorsConfiguration.setAllowedHeaders(new ArrayList<>(DiplomatiqHeaders.AllKnownHeaders));
                     defaultCorsConfiguration.setAllowCredentials(true);
