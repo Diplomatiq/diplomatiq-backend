@@ -10,8 +10,8 @@ import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.context.request.ServletWebRequest;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -43,13 +43,12 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
     @Override
     public void doFilterIfRequestMatches(ServletRequest servletRequest, ServletResponse servletResponse,
                                          FilterChain filterChain) throws IOException {
-        HttpServletRequest request = (HttpServletRequest)servletRequest;
-        ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
+        BodyCachingHttpServletRequest request = new BodyCachingHttpServletRequest((HttpServletRequest)servletRequest);
         HttpServletResponse response = (HttpServletResponse)servletResponse;
 
         try {
-            verifyRequestSignature(wrappedRequest);
-            filterChain.doFilter(wrappedRequest, servletResponse);
+            verifyRequestSignature(request);
+            filterChain.doFilter(request, servletResponse);
         } catch (BadRequestException ex) {
             ResponseEntity<Object> responseEntity = globalExceptionHandler.handleBadRequestException(ex,
                 new ServletWebRequest(request));
@@ -65,8 +64,8 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         }
     }
 
-    private void verifyRequestSignature(ContentCachingRequestWrapper request) throws InvalidKeyException,
-        UnauthorizedException, NoSuchAlgorithmException {
+    private void verifyRequestSignature(HttpServletRequest request) throws InvalidKeyException,
+        UnauthorizedException, NoSuchAlgorithmException, IOException {
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.equals("")) {
             throw new BadRequestException("Authorization header must not be null or empty.");
@@ -118,7 +117,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
                 throw new BadRequestException("Unknown authentication scheme.", null);
         }
 
-        Set<String> signedHeaderNames = Set.of(signedHeaderNamesString.split(";"));
+        Set<String> signedHeaderNames = new LinkedHashSet<>(Arrays.asList(signedHeaderNamesString.split(";")));
         for (String mandatoryHeaderName : mandatoryHeaderNames) {
             if (!signedHeaderNames.contains(mandatoryHeaderName.toLowerCase())) {
                 throw new BadRequestException(String.format("Mandatory header %s is missing from SignedHeaders.",
@@ -136,7 +135,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
             signedHeaders.put(signedHeaderName.toLowerCase(), signedHeaderValue);
         }
 
-        byte[] payload = request.getContentAsByteArray();
+        byte[] payload = StreamUtils.copyToByteArray(request.getInputStream());
         byte[] payloadHash = MessageDigest.getInstance("SHA-256").digest(payload);
         String payloadHashBase64 = Base64.getEncoder().encodeToString(payloadHash);
 

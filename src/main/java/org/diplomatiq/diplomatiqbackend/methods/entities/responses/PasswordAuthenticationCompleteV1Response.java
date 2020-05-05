@@ -6,13 +6,6 @@ import javax.validation.constraints.NotBlank;
 
 public class PasswordAuthenticationCompleteV1Response {
     @Schema(
-        description = "The SRP server proof (M2) as a Hex string",
-        example = "1a91ee53dd8286ba1e83d7f5d554da84a2be089d04ac698a4922fe4e2df3b853"
-    )
-    @NotBlank
-    private String serverProofHex;
-
-    @Schema(
         description = "The ID of the created authentication session as UTF-8 bytes, encrypted with the SRP session " +
             "key (K), as a Base64 string (in DiplomatiqAEAD format = AES-GCM without padding, serialized to binary " +
             "`[1-byte ivLength | 4-byte aadLength (big-endian) | 4-byte ciphertextLength (big-endian) | 1-byte " +
@@ -23,14 +16,8 @@ public class PasswordAuthenticationCompleteV1Response {
     @NotBlank
     private String authenticationSessionIdAeadBase64;
 
-    public PasswordAuthenticationCompleteV1Response(@NotBlank String serverProofHex,
-                                                    @NotBlank String authenticationSessionIdAeadBase64) {
-        this.serverProofHex = serverProofHex;
+    public PasswordAuthenticationCompleteV1Response(@NotBlank String authenticationSessionIdAeadBase64) {
         this.authenticationSessionIdAeadBase64 = authenticationSessionIdAeadBase64;
-    }
-
-    public String getServerProofHex() {
-        return serverProofHex;
     }
 
     public String getAuthenticationSessionIdAeadBase64() {

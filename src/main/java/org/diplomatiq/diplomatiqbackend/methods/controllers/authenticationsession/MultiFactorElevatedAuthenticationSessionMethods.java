@@ -68,7 +68,6 @@ public class MultiFactorElevatedAuthenticationSessionMethods {
         name = "loginV1",
         path = "login-v1",
         method = RequestMethod.POST,
-        consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public LoginV1Response loginV1() throws NoSuchPaddingException, InvalidAlgorithmParameterException,

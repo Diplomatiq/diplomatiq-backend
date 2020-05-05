@@ -287,9 +287,8 @@ public class AuthenticationService {
             throw new UnauthorizedException("Client proof could not be verified.");
         }
 
-        BigInteger serverProofBigInteger;
         try {
-            serverProofBigInteger = srp.calculateServerEvidenceMessage();
+            srp.calculateServerEvidenceMessage();
         } catch (Exception ex) {
             throw new UnauthorizedException("Crypto error during server proof calculation.", ex);
         }
@@ -309,15 +308,13 @@ public class AuthenticationService {
         AuthenticationSession persistedAuthenticationSession =
             authenticationSessionRepository.save(authenticationSession);
 
-        String serverProofHex = serverProofBigInteger.toString(16);
-
         String authenticationSessionId = persistedAuthenticationSession.getId();
         byte[] authenticationSessionIdBytes = authenticationSessionId.getBytes(StandardCharsets.UTF_8);
         DiplomatiqAEAD authenticationSessionIdAead = new DiplomatiqAEAD(authenticationSessionIdBytes);
         byte[] authenticationSessionIdAeadBytes = authenticationSessionIdAead.toBytes(authenticationSessionKeyBytes);
         String authenticationSessionIdAeadBase64 = Base64.getEncoder().encodeToString(authenticationSessionIdAeadBytes);
 
-        return new PasswordAuthenticationCompleteV1Response(serverProofHex, authenticationSessionIdAeadBase64);
+        return new PasswordAuthenticationCompleteV1Response(authenticationSessionIdAeadBase64);
     }
 
     public void elevateAuthenticationSessionInitV1() throws IOException {

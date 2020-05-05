@@ -14,7 +14,7 @@ import java.security.SecureRandom;
 
 @Component
 public class SRP6Factory {
-    private static final SRP6GroupParameters SRP6_GROUP_PARAMETERS = SRP6StandardGroups.rfc5054_8192;
+    private static final SRP6GroupParameters SRP6_GROUP_PARAMETERS = SRP6StandardGroups.rfc5054_4096;
     private static final GeneralDigest SRP6_DIGEST = new SHA256Digest();
     private static final SecureRandom SECURE_RANDOM = getSecureRandom();
 

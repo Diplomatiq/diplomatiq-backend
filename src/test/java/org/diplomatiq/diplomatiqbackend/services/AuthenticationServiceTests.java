@@ -543,9 +543,6 @@ public class AuthenticationServiceTests {
         BigInteger srpClientProofBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpClientProofHex = srpClientProofBigInteger.toString(16);
 
-        BigInteger serverProofBigInteger = new BigInteger(RandomUtils.numericString(10));
-        String serverProofHex = serverProofBigInteger.toString(16);
-
         UserIdentity userIdentity = UserIdentityHelper.create(DummyData.USER_EMAIL, DummyData.USER_FIRST_NAME,
             DummyData.USER_LAST_NAME);
 
@@ -580,7 +577,6 @@ public class AuthenticationServiceTests {
         when(srp6Factory.getSrp6Server(srpVerifierBigInteger)).thenReturn(srp6Server);
 
         when(srp6Server.verifyClientEvidenceMessage(srpClientProofBigInteger)).thenReturn(true);
-        when(srp6Server.calculateServerEvidenceMessage()).thenReturn(serverProofBigInteger);
         when(srp6Server.calculateSessionKey()).thenReturn(authenticationSessionKeyBigInteger);
 
         when(authenticationSessionRepository.save(any(AuthenticationSession.class))).then(invocationOnMock -> {
@@ -629,8 +625,6 @@ public class AuthenticationServiceTests {
         UserAuthentication currentAuthentication = savedAuthenticationSession.getUserAuthentication();
         Set<UserTemporarySRPData> userTemporarySRPDatas = currentAuthentication.getUserTemporarySrpDatas();
         assertEquals(0, userTemporarySRPDatas.size());
-
-        assertEquals(serverProofHex, response.getServerProofHex());
 
         String authenticationSessionIdAeadBase64 = response.getAuthenticationSessionIdAeadBase64();
         byte[] authenticationSessionIdAeadBytes = Base64.getDecoder().decode(authenticationSessionIdAeadBase64);
@@ -697,9 +691,6 @@ public class AuthenticationServiceTests {
         BigInteger srpClientProofBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpClientProofHex = srpClientProofBigInteger.toString(16);
 
-        BigInteger serverProofBigInteger = new BigInteger(RandomUtils.numericString(10));
-        String serverProofHex = serverProofBigInteger.toString(16);
-
         UserIdentity userIdentity = UserIdentityHelper.create(DummyData.USER_EMAIL, DummyData.USER_FIRST_NAME,
             DummyData.USER_LAST_NAME);
 
@@ -713,7 +704,6 @@ public class AuthenticationServiceTests {
         userIdentity.setAuthentications(Set.of(userAuthentication));
 
         byte[] authenticationSessionKey = RandomUtils.bytes(32);
-        BigInteger authenticationSessionKeyBigInteger = new BigInteger(1, authenticationSessionKey);
         AuthenticationSession authenticationSession = AuthenticationSessionHelper.create(authenticationSessionKey);
         authenticationSession.setId(DummyData.AUTHENTICATION_SESSION_ID);
         authenticationSession.setUserAuthentication(userAuthentication);
@@ -923,9 +913,6 @@ public class AuthenticationServiceTests {
         BigInteger srpClientProofBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpClientProofHex = srpClientProofBigInteger.toString(16);
 
-        BigInteger serverProofBigInteger = new BigInteger(RandomUtils.numericString(10));
-        String serverProofHex = serverProofBigInteger.toString(16);
-
         UserIdentity userIdentity = UserIdentityHelper.create(DummyData.USER_EMAIL, DummyData.USER_FIRST_NAME,
             DummyData.USER_LAST_NAME);
 
@@ -1006,9 +993,6 @@ public class AuthenticationServiceTests {
         BigInteger srpClientProofBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpClientProofHex = srpClientProofBigInteger.toString(16);
 
-        BigInteger serverProofBigInteger = new BigInteger(RandomUtils.numericString(10));
-        String serverProofHex = serverProofBigInteger.toString(16);
-
         UserIdentity userIdentity = UserIdentityHelper.create(DummyData.USER_EMAIL, DummyData.USER_FIRST_NAME,
             DummyData.USER_LAST_NAME);
 
@@ -1024,7 +1008,6 @@ public class AuthenticationServiceTests {
         BigInteger serverEphemeralBigInteger = new BigInteger(RandomUtils.numericString(10));
         String serverEphemeralHex = serverEphemeralBigInteger.toString(16);
         BigInteger serverSecretBigInteger = new BigInteger(RandomUtils.numericString(10));
-        String serverSecretHex = serverSecretBigInteger.toString(16);
 
         Session session = SessionHelper.create();
         session.setId(DummyData.SESSION_ID);
@@ -1064,9 +1047,6 @@ public class AuthenticationServiceTests {
 
         BigInteger srpClientProofBigInteger = new BigInteger(RandomUtils.numericString(10));
         String srpClientProofHex = srpClientProofBigInteger.toString(16);
-
-        BigInteger serverProofBigInteger = new BigInteger(RandomUtils.numericString(10));
-        String serverProofHex = serverProofBigInteger.toString(16);
 
         UserIdentity userIdentity = UserIdentityHelper.create(DummyData.USER_EMAIL, DummyData.USER_FIRST_NAME,
             DummyData.USER_LAST_NAME);
