@@ -89,19 +89,4 @@ public class RegularSessionMethods {
     public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
         return authenticationService.elevateRegularSessionInitV1();
     }
-
-    @Operation(
-        summary = "Log out from a device",
-        description = "Logs out the user on the current client device. Deregisters the client device and its session," +
-            " and revokes request signing and authentication credentials for that client device."
-    )
-    @RequestMapping(
-        name = "logoutV1",
-        path = "logout-v1",
-        method = RequestMethod.POST,
-        consumes = MediaType.APPLICATION_JSON_VALUE
-    )
-    public void logoutV1() {
-        authenticationService.logoutV1();
-    }
 }

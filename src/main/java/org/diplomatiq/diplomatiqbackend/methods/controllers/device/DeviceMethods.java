@@ -50,6 +50,7 @@ import java.security.NoSuchAlgorithmException;
 @SecurityRequirements({
     @SecurityRequirement(name = "Authorization"),
     @SecurityRequirement(name = "ClientId"),
+    @SecurityRequirement(name = "DeviceId"),
     @SecurityRequirement(name = "Instant"),
     @SecurityRequirement(name = "SignedHeaders"),
 })
@@ -80,5 +81,20 @@ public class DeviceMethods {
     ) throws NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException,
         IllegalBlockSizeException, BadPaddingException, InvalidKeyException, IOException {
         return authenticationService.getSessionV1(request);
+    }
+
+    @Operation(
+        summary = "Log out from a device",
+        description = "Logs out the user on the current client device. Deregisters the client device and its session," +
+            " and revokes request signing and authentication credentials for that client device."
+    )
+    @RequestMapping(
+        name = "logoutV1",
+        path = "logout-v1",
+        method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public void logoutV1() {
+        authenticationService.logoutV1();
     }
 }
