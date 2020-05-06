@@ -91,8 +91,7 @@ public class DeviceMethods {
     @RequestMapping(
         name = "logoutV1",
         path = "logout-v1",
-        method = RequestMethod.POST,
-        consumes = MediaType.APPLICATION_JSON_VALUE
+        method = RequestMethod.POST
     )
     public void logoutV1() {
         authenticationService.logoutV1();

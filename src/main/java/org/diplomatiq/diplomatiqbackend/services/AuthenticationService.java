@@ -173,10 +173,10 @@ public class AuthenticationService {
     }
 
     public void logoutV1() {
-        String sessionId = getCurrentAuthenticationDetails().getAuthenticationId();
+        String deviceId = getCurrentAuthenticationDetails().getAuthenticationId();
 
-        Session session = sessionRepository.findById(sessionId).orElseThrow();
-        UserDevice userDevice = session.getUserDevice();
+        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
+        Session session = userDevice.getSession();
 
         sessionRepository.delete(session);
         userDeviceRepository.delete(userDevice);
@@ -507,6 +507,12 @@ public class AuthenticationService {
             userIdentityRepository.save(userIdentity);
             userAuthenticationResetRequestRepository.delete(userAuthenticationResetRequest);
         }
+    }
+
+    public GetUserIdentityV1Response getUserIdentityV1() {
+        UserIdentity userIdentity = getCurrentUserIdentity();
+        return new GetUserIdentityV1Response(userIdentity.getEmailAddress(), userIdentity.getFirstName(),
+            userIdentity.getLastName());
     }
 
     public UserIdentity getCurrentUserIdentity() {

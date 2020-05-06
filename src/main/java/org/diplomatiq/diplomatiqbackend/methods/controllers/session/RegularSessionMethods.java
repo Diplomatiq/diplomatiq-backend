@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevateRegularSessionCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.responses.ElevateRegularSessionInitV1Response;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.GetUserIdentityV1Response;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -88,5 +89,19 @@ public class RegularSessionMethods {
     )
     public ElevateRegularSessionInitV1Response elevateRegularSessionInitV1() {
         return authenticationService.elevateRegularSessionInitV1();
+    }
+
+    @Operation(
+        summary = "Get the identity of the user",
+        description = "Returns the identity of the authenticated user"
+    )
+    @RequestMapping(
+        name = "getUserIdentityV1",
+        path = "get-user-identity-v1",
+        method = RequestMethod.GET,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public GetUserIdentityV1Response getUserIdentityV1() {
+        return authenticationService.getUserIdentityV1();
     }
 }
