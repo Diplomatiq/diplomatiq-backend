@@ -10,7 +10,6 @@ import org.diplomatiq.diplomatiqbackend.filters.RequestMatchingFilter;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.crypto.Mac;
@@ -64,8 +63,8 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
         }
     }
 
-    private void verifyRequestSignature(HttpServletRequest request) throws InvalidKeyException,
-        UnauthorizedException, NoSuchAlgorithmException, IOException {
+    private void verifyRequestSignature(BodyCachingHttpServletRequest request) throws InvalidKeyException,
+        UnauthorizedException, NoSuchAlgorithmException {
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.equals("")) {
             throw new BadRequestException("Authorization header must not be null or empty.");
@@ -135,7 +134,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
             signedHeaders.put(signedHeaderName.toLowerCase(), signedHeaderValue);
         }
 
-        byte[] payload = StreamUtils.copyToByteArray(request.getInputStream());
+        byte[] payload = request.getBody();
         byte[] payloadHash = MessageDigest.getInstance("SHA-256").digest(payload);
         String payloadHashBase64 = Base64.getEncoder().encodeToString(payloadHash);
 
@@ -166,7 +165,7 @@ public class RequestSignatureVerificationFilter extends RequestMatchingFilter {
 
             case DeviceSignatureV1:
             case SessionSignatureV1:
-                String deviceId = signedHeaders.get("DeviceId".toLowerCase());
+                String deviceId = signedHeaders.get(DiplomatiqHeaders.KnownHeader.DeviceId.name().toLowerCase());
                 try {
                     requestSigningKey = authenticationService.getDeviceKeyByDeviceId(deviceId);
                 } catch (Exception ex) {
