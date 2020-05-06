@@ -422,32 +422,32 @@ public class AuthenticationServiceTests {
     }
 
     @Test
-    @WithSessionSignatureV1
+    @WithDeviceSignatureV1
     public void logoutV1_shouldLogout() {
-        UserDevice userDevice = UserDeviceHelper.create();
-        userDevice.setId(DummyData.DEVICE_ID);
-
         Session session = SessionHelper.create();
         session.setId(DummyData.SESSION_ID);
-        session.setUserDevice(userDevice);
 
-        when(sessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
+        UserDevice userDevice = UserDeviceHelper.create();
+        userDevice.setId(DummyData.DEVICE_ID);
+        userDevice.setSession(session);
+
+        when(userDeviceRepository.findById(userDevice.getId())).thenReturn(Optional.of(userDevice));
 
         authenticationService.logoutV1();
 
-        verify(sessionRepository, times(1)).findById(session.getId());
-
-        ArgumentCaptor<Session> acSession = ArgumentCaptor.forClass(Session.class);
-        verify(sessionRepository).delete(acSession.capture());
-        verifyNoMoreInteractions(sessionRepository);
-        Session deletedSession = acSession.getValue();
-        assertEquals(session, deletedSession);
+        verify(userDeviceRepository, times(1)).findById(userDevice.getId());
 
         ArgumentCaptor<UserDevice> acUserDevice = ArgumentCaptor.forClass(UserDevice.class);
         verify(userDeviceRepository).delete(acUserDevice.capture());
         verifyNoMoreInteractions(userDeviceRepository);
         UserDevice deletedUserDevice = acUserDevice.getValue();
         assertEquals(userDevice, deletedUserDevice);
+
+        ArgumentCaptor<Session> acSession = ArgumentCaptor.forClass(Session.class);
+        verify(sessionRepository).delete(acSession.capture());
+        verifyNoMoreInteractions(sessionRepository);
+        Session deletedSession = acSession.getValue();
+        assertEquals(session, deletedSession);
     }
 
     @Test
