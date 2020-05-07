@@ -18,6 +18,8 @@ public final class DiplomatiqApiError {
         MethodNotAllowed,
         NotAcceptable,
         NotFound,
+        SessionElevationRequired,
+        SessionExpired,
         Unauthorized,
         UnsupportedMediaType,
     }

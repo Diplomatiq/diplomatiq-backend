@@ -138,6 +138,31 @@ public class EmailSendingEngine {
         );
     }
 
+    public void sendAccountDeletionEmail(String emailAddress, String firstName, String lastName) throws IOException {
+        Email toEmail = new Email();
+        toEmail.setEmail(emailAddress);
+        toEmail.setName(String.format("%s %s", firstName, lastName));
+
+        Personalization personalization = new Personalization();
+        personalization.addTo(toEmail);
+
+        personalization.addDynamicTemplateData("firstName", firstName);
+        personalization.addDynamicTemplateData("lastName", lastName);
+
+        Mail mail = new Mail();
+        mail.setFrom(FROM_EMAIL);
+        mail.setReplyTo(FROM_EMAIL);
+        mail.setTemplateId("d-07803756f7e2425b851e0041a455c5d0");
+        mail.addPersonalization(personalization);
+
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        sendRequest(request);
+    }
+
     private void sendMultiFactorAuthenticationEmailInternal(UserIdentity userIdentity, String authenticationCode) throws IOException {
         Email toEmail = new Email();
         toEmail.setEmail(userIdentity.getEmailAddress());

@@ -68,7 +68,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({ AccessDeniedException.class })
     public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException exception, WebRequest request) {
-        DiplomatiqApiError apiError = new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.Unauthorized,
+        DiplomatiqApiError apiError = new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.SessionElevationRequired,
             exception);
         return handleDiplomatiqApiError(apiError);
     }

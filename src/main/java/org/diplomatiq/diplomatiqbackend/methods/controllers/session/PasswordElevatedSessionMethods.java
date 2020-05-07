@@ -94,6 +94,12 @@ public class PasswordElevatedSessionMethods {
         summary = "Change the user's password",
         description = "Changes the user's password to be able to authenticate with the new one."
     )
+    @RequestMapping(
+        name = "changePasswordV1",
+        path = "change-password-v1",
+        method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
     public void changePasswordV1(
         @Parameter(description = "The request body as a `ChangePasswordV1Request` object")
         @Valid

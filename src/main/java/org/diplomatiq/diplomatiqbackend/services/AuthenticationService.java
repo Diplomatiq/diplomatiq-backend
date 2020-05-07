@@ -549,7 +549,8 @@ public class AuthenticationService {
 
     public UserIdentity verifyAuthenticationSessionCredentials(String authenticationSessionId) {
         AuthenticationSession authenticationSession =
-            authenticationSessionRepository.findById(authenticationSessionId, 2).orElseThrow();
+            authenticationSessionRepository.findById(authenticationSessionId, 2)
+                .orElseThrow(() -> new UnauthorizedException("Authentication session not found."));
 
         if (ExpirationUtils.isExpiredNow(authenticationSession)) {
             throw new UnauthorizedException("Authentication session expired.");
@@ -559,12 +560,18 @@ public class AuthenticationService {
     }
 
     public UserIdentity verifyDeviceCredentials(String deviceId) {
-        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
+        UserDevice userDevice = userDeviceRepository.findById(deviceId)
+            .orElseThrow(() -> new UnauthorizedException("User device not found."));
         return userDevice.getUserIdentity();
     }
 
     public UserIdentity verifySessionCredentials(String deviceId, String sessionId) {
-        UserDevice userDevice = userDeviceRepository.findById(deviceId).orElseThrow();
+        UserDevice userDevice = userDeviceRepository.findById(deviceId)
+            .orElseThrow(() -> new UnauthorizedException("User device not found."));
+
+        if (userDevice.getSession() == null) {
+            throw new UnauthorizedException("Device has no associated session.");
+        }
 
         if (!userDevice.getSession().getId().equals(sessionId)) {
             throw new UnauthorizedException("Device and session are unrelated.");
