@@ -7,8 +7,12 @@ Networking for the diplomatiq world.
 [https://api.diplomatiq.org](https://api.diplomatiq.org)
 
 <p>
-<a href="https://github.com/Diplomatiq/diplomatiq-backend/actions?query=workflow%3ACI" target="_blank" style="text-decoration: none;">
-  <img src="https://github.com/Diplomatiq/diplomatiq-backend/workflows/CI/badge.svg" alt="build status">
+<a href="https://github.com/Diplomatiq/diplomatiq-backend/actions?query=workflow%3A%22Build+and+publish+to+Azure+%28develop%29%22" target="_blank" style="text-decoration: none;">
+  <img src="https://github.com/Diplomatiq/diplomatiq-backend/workflows/Build%20and%20publish%20to%20Azure%20(develop)/badge.svg" alt="build status">
+</a>
+
+<a href="https://github.com/Diplomatiq/diplomatiq-backend/actions?query=workflow%3A%22Build+and+publish+to+Azure+%production%29%22" target="_blank" style="text-decoration: none;">
+  <img src="https://github.com/Diplomatiq/diplomatiq-backend/workflows/Build%20and%20publish%20to%20Azure%20(production)/badge.svg" alt="build status">
 </a>
 
 <a href="https://github.com/Diplomatiq/diplomatiq-backend" target="_blank" style="text-decoration: none;">
