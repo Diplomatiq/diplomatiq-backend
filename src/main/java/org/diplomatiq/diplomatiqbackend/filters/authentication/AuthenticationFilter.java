@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.diplomatiq.diplomatiqbackend.domain.entities.concretes.UserIdentity;
 import org.diplomatiq.diplomatiqbackend.exceptions.GlobalExceptionHandler;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.BadRequestException;
+import org.diplomatiq.diplomatiqbackend.exceptions.internal.EmailAddressNotValidatedException;
 import org.diplomatiq.diplomatiqbackend.exceptions.internal.UnauthorizedException;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqAuthenticationScheme;
 import org.diplomatiq.diplomatiqbackend.filters.DiplomatiqHeaders;
@@ -50,6 +51,10 @@ public class AuthenticationFilter extends RequestMatchingFilter {
             writeJsonResponse(response, responseEntity);
         } catch (UnauthorizedException ex) {
             ResponseEntity<Object> responseEntity = globalExceptionHandler.handleUnauthorizedException(ex,
+                new ServletWebRequest(request));
+            writeJsonResponse(response, responseEntity);
+        } catch (EmailAddressNotValidatedException ex) {
+            ResponseEntity<Object> responseEntity = globalExceptionHandler.handleEmailAddressNotValidatedException(ex,
                 new ServletWebRequest(request));
             writeJsonResponse(response, responseEntity);
         } catch (Exception ex) {
@@ -103,7 +108,7 @@ public class AuthenticationFilter extends RequestMatchingFilter {
         }
 
         if (!userIdentity.isEmailValidated()) {
-            throw new UnauthorizedException("Email address is not validated.");
+            throw new EmailAddressNotValidatedException("Email address is not validated.");
         }
 
         return new AuthenticationToken(userIdentity, new AuthenticationDetails(authenticationScheme, authenticationId));

@@ -43,6 +43,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleDiplomatiqApiError(apiError);
     }
 
+    @ExceptionHandler({ EmailAddressNotValidatedException.class })
+    public ResponseEntity<Object> handleEmailAddressNotValidatedException(EmailAddressNotValidatedException exception,
+                                                                  WebRequest request) {
+        DiplomatiqApiError apiError =
+            new DiplomatiqApiError(DiplomatiqApiError.DiplomatiqApiErrorCode.EmailAddressNotValidated, exception);
+        return handleDiplomatiqApiError(apiError);
+    }
+
     @ExceptionHandler({ MethodNotAllowedException.class })
     public ResponseEntity<Object> handleMethodNotAllowedException(MethodNotAllowedException exception,
                                                                   WebRequest request) {

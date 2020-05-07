@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -43,6 +44,16 @@ public class RegistrationService {
         userIdentity.setAuthentications(Set.of(userAuthentication));
         userIdentityRepository.save(userIdentity);
 
+        emailSendingEngine.sendEmailAddressValidationEmail(userIdentity);
+    }
+
+    public void resendValidationEmailV1(String emailAddress) throws IOException {
+        Optional<UserIdentity> userIdentityOptional = userIdentityRepository.findByEmailAddress(emailAddress);
+        if (userIdentityOptional.isEmpty()) {
+            return;
+        }
+
+        UserIdentity userIdentity = userIdentityOptional.get();
         emailSendingEngine.sendEmailAddressValidationEmail(userIdentity);
     }
 }

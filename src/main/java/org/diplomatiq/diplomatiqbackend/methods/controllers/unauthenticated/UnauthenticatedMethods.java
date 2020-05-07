@@ -157,6 +157,28 @@ public class UnauthenticatedMethods {
     }
 
     @Operation(
+        summary = "Resend the validation email to a registered user",
+        description = "Resends the validation email to a registered user's email address if the user exists and not " +
+            "already validated their email address. Does not throw to avoid revealing user data."
+    )
+    @RequestMapping(
+        name = "resendValidationEmailV1",
+        path = "resend-validation-email-v1",
+        method = RequestMethod.POST
+    )
+    public void resendValidationEmail(
+        @Parameter(
+            description = "The email address of the user",
+            example = "samsepi0l@diplomatiq.org"
+        )
+        @NotBlank
+        @RequestParam
+            String emailAddress
+    ) throws IOException {
+        registrationService.resendValidationEmailV1(emailAddress);
+    }
+
+    @Operation(
         summary = "Reset a password",
         description = "Resets a given password by the corresponding password reset key. If the password reset key " +
             "does not exist, the method still returns success to avoid revealing user data."

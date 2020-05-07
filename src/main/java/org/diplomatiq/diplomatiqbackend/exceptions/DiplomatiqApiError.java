@@ -13,6 +13,7 @@ public final class DiplomatiqApiError {
     public enum DiplomatiqApiErrorCode {
         BadRequest,
         ClockDiscrepancy,
+        EmailAddressNotValidated,
         InternalServerError,
         MethodNotAllowed,
         NotAcceptable,

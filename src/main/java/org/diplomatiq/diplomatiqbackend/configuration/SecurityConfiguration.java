@@ -123,6 +123,7 @@ public class SecurityConfiguration {
                 "/password-authentication-init-v1",
                 "/register-user-v1",
                 "/request-password-reset-v1",
+                "/resend-validation-email-v1",
                 "/reset-password-v1",
                 "/validate-email-address-v1"
             )

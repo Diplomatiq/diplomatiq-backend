@@ -509,6 +509,19 @@ public class AuthenticationService {
         }
     }
 
+    public void changePasswordV1(ChangePasswordV1Request request) {
+        UserIdentity userIdentity = userIdentityRepository.findById(getCurrentUserIdentity().getId()).orElseThrow();
+
+        String srpSaltHex = request.getSrpSaltHex();
+        String srpVerifierHex = request.getSrpVerifierHex();
+
+        UserAuthentication newUserAuthentication = UserAuthenticationHelper.create(userIdentity,
+            srpSaltHex, srpVerifierHex, request.getPasswordStretchingAlgorithm());
+        userIdentity.getAuthentications().add(newUserAuthentication);
+
+        userIdentityRepository.save(userIdentity);
+    }
+
     public GetUserIdentityV1Response getUserIdentityV1() {
         UserIdentity userIdentity = getCurrentUserIdentity();
         return new GetUserIdentityV1Response(userIdentity.getEmailAddress(), userIdentity.getFirstName(),

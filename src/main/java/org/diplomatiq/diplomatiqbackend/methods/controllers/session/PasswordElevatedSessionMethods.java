@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ChangePasswordV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevatePasswordElevatedSessionCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,5 +88,18 @@ public class PasswordElevatedSessionMethods {
             ElevatePasswordElevatedSessionCompleteV1Request request
     ) {
         authenticationService.elevatePasswordElevatedSessionCompleteV1(request);
+    }
+
+    @Operation(
+        summary = "Change the user's password",
+        description = "Changes the user's password to be able to authenticate with the new one."
+    )
+    public void changePasswordV1(
+        @Parameter(description = "The request body as a `ChangePasswordV1Request` object")
+        @Valid
+        @RequestBody
+            ChangePasswordV1Request request
+    ) {
+        authenticationService.changePasswordV1(request);
     }
 }
