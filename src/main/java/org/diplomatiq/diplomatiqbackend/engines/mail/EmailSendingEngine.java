@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class EmailSendingEngine {
@@ -59,7 +61,8 @@ public class EmailSendingEngine {
         personalization.addDynamicTemplateData("lastName", userIdentity.getLastName());
         personalization.addDynamicTemplateData("emailAddressValidationUrl",
             String.format(
-                "https://app.diplomatiq.org/validate-email-address?email-validation-key=%s",
+                "https://app.diplomatiq.org/validate-email-address?email-address=%s&email-validation-key=%s",
+                URLEncoder.encode(userIdentity.getEmailAddress(), StandardCharsets.UTF_8),
                 userIdentity.getEmailValidationKey()
             )
         );
@@ -95,7 +98,8 @@ public class EmailSendingEngine {
         personalization.addDynamicTemplateData("lastName", userIdentity.getLastName());
         personalization.addDynamicTemplateData("passwordResetUrl",
             String.format(
-                "https://app.diplomatiq.org/reset-password?password-reset-key=%s",
+                "https://app.diplomatiq.org/login?email-address=%s&password-reset-key=%s",
+                URLEncoder.encode(userIdentity.getEmailAddress(), StandardCharsets.UTF_8),
                 userAuthenticationResetRequest.getRequestKey()
             )
         );
