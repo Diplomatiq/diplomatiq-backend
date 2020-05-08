@@ -57,6 +57,25 @@ public class PasswordElevatedSessionMethods {
     private AuthenticationService authenticationService;
 
     @Operation(
+        summary = "Change the user's password",
+        description = "Changes the user's password to be able to authenticate with the new one."
+    )
+    @RequestMapping(
+        name = "changePasswordV1",
+        path = "change-password-v1",
+        method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public void changePasswordV1(
+        @Parameter(description = "The request body as a `ChangePasswordV1Request` object")
+        @Valid
+        @RequestBody
+            ChangePasswordV1Request request
+    ) {
+        authenticationService.changePasswordV1(request);
+    }
+
+    @Operation(
         summary = "Initiate session elevation to MultiFactorElevatedSession assurance level",
         description = "Sends an email to the email address of the currently authenticated user with a multi-factor " +
             "authentication code."
@@ -88,24 +107,5 @@ public class PasswordElevatedSessionMethods {
             ElevatePasswordElevatedSessionCompleteV1Request request
     ) {
         authenticationService.elevatePasswordElevatedSessionCompleteV1(request);
-    }
-
-    @Operation(
-        summary = "Change the user's password",
-        description = "Changes the user's password to be able to authenticate with the new one."
-    )
-    @RequestMapping(
-        name = "changePasswordV1",
-        path = "change-password-v1",
-        method = RequestMethod.POST,
-        consumes = MediaType.APPLICATION_JSON_VALUE
-    )
-    public void changePasswordV1(
-        @Parameter(description = "The request body as a `ChangePasswordV1Request` object")
-        @Valid
-        @RequestBody
-            ChangePasswordV1Request request
-    ) {
-        authenticationService.changePasswordV1(request);
     }
 }
