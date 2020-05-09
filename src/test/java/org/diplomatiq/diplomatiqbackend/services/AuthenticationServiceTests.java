@@ -236,10 +236,14 @@ public class AuthenticationServiceTests {
         verifyNoMoreInteractions(userDeviceRepository);
 
         ArgumentCaptor<Session> acSession = ArgumentCaptor.forClass(Session.class);
+        verify(sessionRepository, times(1)).delete(acSession.capture());
         verify(sessionRepository, times(1)).save(acSession.capture());
         verifyNoMoreInteractions(sessionRepository);
 
-        Session savedSession = acSession.getValue();
+        Session deletedSession = acSession.getAllValues().get(0);
+        assertEquals(oldSession, deletedSession);
+
+        Session savedSession = acSession.getAllValues().get(1);
         assertEquals(retrievedDevice, savedSession.getUserDevice());
 
         String sessionIdAeadBase64 = getSessionV1Response.getSessionIdAeadBase64();
@@ -285,10 +289,14 @@ public class AuthenticationServiceTests {
         verifyNoMoreInteractions(userDeviceRepository);
 
         ArgumentCaptor<Session> acSession = ArgumentCaptor.forClass(Session.class);
+        verify(sessionRepository, times(1)).delete(acSession.capture());
         verify(sessionRepository, times(1)).save(acSession.capture());
         verifyNoMoreInteractions(sessionRepository);
 
-        Session savedSession = acSession.getValue();
+        Session deletedSession = acSession.getAllValues().get(0);
+        assertEquals(oldSession, deletedSession);
+
+        Session savedSession = acSession.getAllValues().get(1);
         assertEquals(retrievedDevice, savedSession.getUserDevice());
 
         String sessionIdAeadBase64 = getSessionV1Response.getSessionIdAeadBase64();

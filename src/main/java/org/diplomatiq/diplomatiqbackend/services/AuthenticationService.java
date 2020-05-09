@@ -105,6 +105,8 @@ public class AuthenticationService {
                 byte[] sessionIdAeadBytes = sessionIdAead.toBytes(userDevice.getDeviceKey());
                 String sessionIdAeadBase64 = Base64.getEncoder().encodeToString(sessionIdAeadBytes);
                 return new GetSessionV1Response(sessionIdAeadBase64);
+            } else {
+                sessionRepository.delete(oldSession);
             }
         }
 
