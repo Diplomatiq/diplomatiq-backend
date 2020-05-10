@@ -13,19 +13,17 @@ import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ApplyConferenceV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevateRegularSessionCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.OrganizeConferenceV1Request;
-import org.diplomatiq.diplomatiqbackend.methods.entities.responses.ElevateRegularSessionInitV1Response;
-import org.diplomatiq.diplomatiqbackend.methods.entities.responses.GetUserIdentityV1Response;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.*;
+import org.diplomatiq.diplomatiqbackend.methods.entities.responses.subentities.CommitteeWithSeatsWithDelegate;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
 import org.diplomatiq.diplomatiqbackend.services.ConferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import java.util.List;
 
 @Tag(name = "Session methods - RegularSession", description = "These methods are available with a valid session, with" +
@@ -118,6 +116,20 @@ public class RegularSessionMethods {
     }
 
     @Operation(
+        summary = "Return conferences which can be applied on",
+        description = "Returns such conferences, which are in the future, and has vacant places."
+    )
+    @RequestMapping(
+        name = "exploreConferencesV1",
+        path = "explore-conferences-v1",
+        method = RequestMethod.GET,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<ExploreConferencesV1Response> exploreConferencesV1() {
+        return conferenceService.exploreConferencesV1();
+    }
+
+    @Operation(
         summary = "Get the conferences which the user participates in",
         description = "Returns the ids of conferences which the user participates in (not organizes)."
     )
@@ -127,8 +139,15 @@ public class RegularSessionMethods {
         method = RequestMethod.GET,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public List<String> getMyConferencesV1() {
-        return conferenceService.getMyConferencesV1();
+    public List<GetMyConferencesV1Response> getMyConferencesV1(
+        @Parameter(
+            description = "If true, past conferences (which have already ended) are included into the response"
+        )
+        @NotBlank
+        @RequestParam
+            boolean includePast
+    ) {
+        return conferenceService.getMyConferencesV1(includePast);
     }
 
     @Operation(
@@ -141,8 +160,37 @@ public class RegularSessionMethods {
         method = RequestMethod.GET,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public List<String> getMyOrganizedConferencesV1() {
-        return conferenceService.getMyOrganizedConferencesV1();
+    public List<GetMyOrganizedConferencesV1Response> getMyOrganizedConferencesV1(
+        @Parameter(
+            description = "If true, past conferences (which have already ended) are included into the response"
+        )
+        @NotBlank
+        @RequestParam
+            boolean includePast
+    ) {
+        return conferenceService.getMyOrganizedConferencesV1(includePast);
+    }
+
+    @Operation(
+        summary = "Get the country matrix of a conference organized by the user",
+        description = "Returns the country matrix (committee-country assignments) of a conference organized by the user."
+    )
+    @RequestMapping(
+        name = "getCountryMatrixV1",
+        path = "get-country-matrix-v1",
+        method = RequestMethod.GET,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<CommitteeWithSeatsWithDelegate> getCountryMatrixV1(
+        @Parameter(
+            description = "The ID of the queried conference",
+            example = "dxm2zhi5b6ezkhHkfulaA1KWaiOUldmF"
+        )
+        @NotBlank
+        @RequestParam
+            String conferenceId
+    ) {
+        return conferenceService.getCountryMatrixV1(conferenceId);
     }
 
     @Operation(
