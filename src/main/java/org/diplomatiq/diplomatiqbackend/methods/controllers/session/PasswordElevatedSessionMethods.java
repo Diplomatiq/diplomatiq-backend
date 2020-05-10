@@ -10,9 +10,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.diplomatiq.diplomatiqbackend.exceptions.DiplomatiqApiError;
+import org.diplomatiq.diplomatiqbackend.methods.entities.requests.CancelApplicationV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ChangePasswordV1Request;
 import org.diplomatiq.diplomatiqbackend.methods.entities.requests.ElevatePasswordElevatedSessionCompleteV1Request;
 import org.diplomatiq.diplomatiqbackend.services.AuthenticationService;
+import org.diplomatiq.diplomatiqbackend.services.ConferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,6 +57,27 @@ import java.io.IOException;
 public class PasswordElevatedSessionMethods {
     @Autowired
     private AuthenticationService authenticationService;
+
+    @Autowired
+    private ConferenceService conferenceService;
+
+    @Operation(
+        summary = "Cancel an application to a conference",
+        description = "Cancels a user's application to a conference and sends an email to the organizer."
+    )
+    @RequestMapping(
+        name = "cancelApplicationV1",
+        path = "cancel-application-v1",
+        method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public void cancelApplicationV1(
+        @Parameter(description = "The request body as a `CancelApplicationV1Request` object")
+        @Valid
+        @RequestBody
+            CancelApplicationV1Request request) throws IOException {
+        conferenceService.cancelApplicationV1(request);
+    }
 
     @Operation(
         summary = "Change the user's password",

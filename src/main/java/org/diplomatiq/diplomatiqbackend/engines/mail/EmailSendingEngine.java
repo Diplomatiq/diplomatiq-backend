@@ -118,6 +118,60 @@ public class EmailSendingEngine {
         sendRequest(request);
     }
 
+    public void sendConferenceCancelledEmail(UserIdentity userIdentity, String conferenceName) throws IOException {
+        Email toEmail = new Email();
+        toEmail.setEmail(userIdentity.getEmailAddress());
+        toEmail.setName(String.format("%s %s", userIdentity.getFirstName(), userIdentity.getLastName()));
+
+        Personalization personalization = new Personalization();
+        personalization.addTo(toEmail);
+
+        personalization.addDynamicTemplateData("firstName", userIdentity.getFirstName());
+        personalization.addDynamicTemplateData("lastName", userIdentity.getLastName());
+        personalization.addDynamicTemplateData("conferenceName", conferenceName);
+
+        Mail mail = new Mail();
+        mail.setFrom(FROM_EMAIL);
+        mail.setReplyTo(FROM_EMAIL);
+        mail.setTemplateId("d-ceeda022b5654b3999e0905caf7f8c2d");
+        mail.addPersonalization(personalization);
+
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        sendRequest(request);
+    }
+
+    public void sendApplicationCancelledEmail(UserIdentity userIdentity, String conferenceName, String committeeName, String representedCountry) throws IOException {
+        Email toEmail = new Email();
+        toEmail.setEmail(userIdentity.getEmailAddress());
+        toEmail.setName(String.format("%s %s", userIdentity.getFirstName(), userIdentity.getLastName()));
+
+        Personalization personalization = new Personalization();
+        personalization.addTo(toEmail);
+
+        personalization.addDynamicTemplateData("firstName", userIdentity.getFirstName());
+        personalization.addDynamicTemplateData("lastName", userIdentity.getLastName());
+        personalization.addDynamicTemplateData("conferenceName", conferenceName);
+        personalization.addDynamicTemplateData("committeeName", committeeName);
+        personalization.addDynamicTemplateData("representedCountry", representedCountry);
+
+        Mail mail = new Mail();
+        mail.setFrom(FROM_EMAIL);
+        mail.setReplyTo(FROM_EMAIL);
+        mail.setTemplateId("d-61ab60a3d9f64eae87325f35a0404d74");
+        mail.addPersonalization(personalization);
+
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        sendRequest(request);
+    }
+
     public void sendMultiFactorAuthenticationEmail(SessionMultiFactorElevationRequest sessionMultiFactorElevationRequest) throws IOException {
         Session session =
             sessionRepository.findById(sessionMultiFactorElevationRequest.getSession().getId()).orElseThrow();

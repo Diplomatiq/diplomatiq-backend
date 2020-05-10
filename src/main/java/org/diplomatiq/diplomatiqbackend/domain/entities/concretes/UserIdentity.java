@@ -28,6 +28,15 @@ public class UserIdentity extends AbstractCreationRecordedNodeEntity {
     @Relationship(type = "USES_DIPLOMATIQ_ON")
     private Set<UserDevice> devices = new HashSet<>();
 
+    @Relationship(type = "ORGANIZES")
+    private Set<Conference> organizedConferences = new HashSet<>();
+
+    @Relationship(type = "PARTICIPATES")
+    private Set<Conference> conferences = new HashSet<>();
+
+    @Relationship(type = "REPRESENTS")
+    private Set<CommitteeSeat> committeeSeats = new HashSet<>();
+
     public String getEmailAddress() {
         return emailAddress;
     }
@@ -82,5 +91,29 @@ public class UserIdentity extends AbstractCreationRecordedNodeEntity {
 
     public void setDevices(Set<UserDevice> devices) {
         this.devices = devices;
+    }
+
+    public Set<Conference> getOrganizedConferences() {
+        return organizedConferences;
+    }
+
+    public void setOrganizedConferences(Set<Conference> organizedConferences) {
+        this.organizedConferences = organizedConferences;
+    }
+
+    public Set<Conference> getConferences() {
+        return conferences;
+    }
+
+    public void setConferences(Set<Conference> conferences) {
+        this.conferences = conferences;
+    }
+
+    public Set<CommitteeSeat> getCommitteeSeats() {
+        return committeeSeats;
+    }
+
+    public void setCommitteeSeats(Set<CommitteeSeat> committeeSeats) {
+        this.committeeSeats = committeeSeats;
     }
 }
