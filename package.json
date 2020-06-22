@@ -1,6 +1,6 @@
 {
   "name": "diplomatiq-backend",
   "devDependencies": {
-    "commitlint": "^8.3.5"
+    "commitlint": "^9.0.1"
   }
 }
